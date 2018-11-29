@@ -1,0 +1,97 @@
+# -*- coding: utf-8 -*-
+
+from gl import *
+import pymysql.cursors
+
+class Tools:
+
+    def queryVcZhSql(self, vc):
+        return 'select vc,vczh,unit from vcmap where vc="%s"' % vc
+
+    def queryRedPriceSql(self, vc, typ, spec):
+        if isinstance(vc, tuple):
+            return 'select vc,name,price from redprice where vc in %s and type="%s" and spec="%s"'\
+                % (str(vc),typ,spec)
+        else:
+            return 'select vc,name,price from redprice where vc="%s" and type="%s" and spec="%s"'\
+                % (vc,typ,spec)
+
+    def queryClassDiscountSql(self, classify, sn):
+        return 'select discount from classify where class="%s" and sn<=%d' % (classify,sn)
+
+    def queryStuffSql(self, vc, sn, typ, spec):
+        return 'select * from stuff where vc="%s" and sn=%d and type="%s" and spec="%s"' % (vc,sn,typ,spec)
+
+    def queryRecordSql(self, startdate, enddate, orderno, typ, spec, vc):
+        sql = 'select * from record where orderdate between "%s" and "%s"' % (startdate,enddate)
+        if orderno != '':
+            sql += ' and orderno like "%%%s%%"' % orderno
+        if typ != '':
+            sql += ' and ordertype="%s"' % typ
+        if spec != '':
+            sql += ' and orderspec="%s"' % spec
+        if vc != '':
+            sql += ' and vc="%s"' % vc
+        return sql
+
+
+class DB:
+
+    def __init__(self, host='localhost', port=3306, db=None, user='root', pwd='root'):
+        self.conn = pymysql.connect(host=host, port=port, user=user, password=pwd, db=db, 
+                charset='utf8', cursorclass=pymysql.cursors.DictCursor) 
+        self.name = '%s.%d.%s' % (host,port,db)
+        #GL.LOG.info('数据库连接(%s)已建立' % self.name)
+        print('数据库连接(%s)已建立' % self.name)
+        self.count_success = 0
+        self.count_failed = 0
+
+    def __del__(self):
+        pass
+        #GL.LOG.info('数据库连接(%s)已断开' % self.name)
+        #print('adfasf')
+        #print('数据库连接(%s)已断开' % self.name)
+        #time.sleep(300)
+        #self.conn.close()
+
+    def close(self):
+        self.conn.close()
+        print('数据库连接(%s)已断开' % self.name)
+
+    def resetCount(self):
+        self.count_success = 0
+        self.count_failed = 0
+
+    def getCount(self):
+        return (self.count_success,self.count_failed)
+
+    def exec(self, sql):
+        GL.LOG.debug(sql)
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(sql)
+                self.conn.commit()
+                self.count_success += 1
+                return True
+        except:
+            self.count_failed += 1
+            #GL.LOG.error('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
+            print('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
+            return False
+
+    def query(self, sql):
+        GL.LOG.debug(sql)
+        result = []
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(sql)
+                result.extend(cur.fetchall())
+                self.count_success += 1
+                return result
+        except:
+            self.count_failed += 1
+            #GL.LOG.error('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
+            print('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
+            return False
+
+
