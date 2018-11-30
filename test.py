@@ -112,7 +112,7 @@ def ReadAccountData():
         mp['commission'] = row[17].value
         mp['commission_date'] = row[18].value
         mp['remark'] = row[19].value
-        InsertToAccount(mp)
+        #InsertToAccount(mp)
 
 fn = '../../db/wanbo/2018万泊财务汇总表（46周）.xlsx'
 wb = load_workbook(fn, read_only=True, data_only=True)
@@ -130,5 +130,6 @@ for ws in wb:
         #ReadBalanceData(source)
     else:
         pass
-
-db.close()
+del db
+#time.sleep(3)
+#db.close()

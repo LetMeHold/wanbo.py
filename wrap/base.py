@@ -5,6 +5,9 @@ import pymysql.cursors
 
 class Tools:
 
+    def queryTestSql(self):
+        return 'select * from test'
+
     def queryVcZhSql(self, vc):
         return 'select vc,vczh,unit from vcmap where vc="%s"' % vc
 
@@ -41,22 +44,13 @@ class DB:
         self.conn = pymysql.connect(host=host, port=port, user=user, password=pwd, db=db, 
                 charset='utf8', cursorclass=pymysql.cursors.DictCursor) 
         self.name = '%s.%d.%s' % (host,port,db)
-        #GL.LOG.info('数据库连接(%s)已建立' % self.name)
-        print('数据库连接(%s)已建立' % self.name)
+        GL.LOG.info('数据库连接(%s)已建立' % self.name)
         self.count_success = 0
         self.count_failed = 0
 
     def __del__(self):
-        pass
-        #GL.LOG.info('数据库连接(%s)已断开' % self.name)
-        #print('adfasf')
-        #print('数据库连接(%s)已断开' % self.name)
-        #time.sleep(300)
-        #self.conn.close()
-
-    def close(self):
         self.conn.close()
-        print('数据库连接(%s)已断开' % self.name)
+        GL.LOG.info('数据库连接(%s)已断开' % self.name)
 
     def resetCount(self):
         self.count_success = 0
@@ -80,7 +74,7 @@ class DB:
             return False
 
     def query(self, sql):
-        GL.LOG.debug(sql)
+        GL.LOG.debug('sql: ' + sql)
         result = []
         try:
             with self.conn.cursor() as cur:
