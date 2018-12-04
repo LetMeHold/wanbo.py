@@ -30,6 +30,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twData.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
 
         self.tables = {'收支明细':'balance','测试':'test'}
+        self.sqlTemplates = {'收支明细':'insert into balance (source,class1,class2,date,abstract,income,pay,balance,type,credence,remark) \
+                                                        values("%s","%s","%s","%s","%s",%f,%f,%f,"%s","%s","%s")',
+                            '测试':'insert into test (name,age,date) values("%s",%d,"%s")'}
         self.cmbTable.addItem('无')
         self.cmbTable.addItems(list(self.tables.keys()))
         #self.cmbTable.selectIndex = 0
@@ -43,6 +46,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.cmbTable.currentIndexChanged.connect(self.cmbTableSelected)
         self.btnRefresh.clicked.connect(self.btnRefreshClicked)
         self.edtFilter.textChanged.connect(self.edtFilterChanged)
+        self.btnAdd.clicked.connect(self.btnAddClicked)
 
     def tablePopMenu(self, pos):
         self.popmenu.popup(QCursor.pos())
@@ -58,6 +62,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twData.setColumnCount(len(self.tableHeads[1]))
         self.twData.setRowCount(len(self.tableData))
         self.twData.setHorizontalHeaderLabels(self.tableHeads[1])
+        self.isAdding = False
+        self.btnAdd.setText('新增')
 
     def cmbTableSelected(self, index):
         key = self.cmbTable.itemText(index)
@@ -100,4 +106,38 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.twData.setItem(r,c,it)
                 self.twData.setRowHidden(r, False)
         self.twData.setVisible(True)
+
+    def btnAddClicked(self):
+        key = self.cmbTable.currentText()
+        if key not in self.tables:
+            return
+        if self.btnAdd.text() == '新增':
+            self.twData.clearContents()
+            self.twData.setRowCount(1)
+            self.btnAdd.setText('确认新增')
+        else:
+            r = 0
+            datas = []
+            for c in range(0,self.twData.columnCount()):
+                it = self.twData.item(r, c)
+                txt = None
+                if it == None:
+                    txt = 0
+                else:
+                    txt = it.text()
+                    if txt.strip() == '':
+                        txt = 0
+                    elif self.tableHeads[2][c] == 'int':
+                        txt = int(txt)
+                    elif self.tableHeads[2][c] == 'double':
+                        txt = float(txt)
+                datas.append(txt)
+            sql = self.sqlTemplates[key] % tuple(datas)
+            print(sql)
+            sql = sql.replace('"0"', 'NULL')
+            sql = sql.replace('0', 'NULL')
+            print(sql)
+            #self.bus.execSql(sql)
+            self.btnAdd.setText('新增')
+            self.btnRefreshClicked()
 
