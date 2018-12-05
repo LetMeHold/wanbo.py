@@ -43,6 +43,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnRefresh.clicked.connect(self.btnRefreshClicked)
         self.edtFilter.textChanged.connect(self.edtFilterChanged)
         self.btnAdd.clicked.connect(self.btnAddClicked)
+        self.twData.itemDoubleClicked.connect(self.dataItemEdit)
+
+    def dataItemEdit(self, it):
+        self.twData.itemChanged.connect(self.dataItemChanged)
+
+    def dataItemChanged(self, it):
+        self.twData.itemChanged.disconnect()
+        r = it.row()
+        c = it.column()
+        id_it = self.twData.item(r, 0)
+        id_enHead = self.tableHeads[0][0]
+        id_value = int(id_it.text())
+        enHead = self.tableHeads[0][c]
+        tp = self.tableHeads[2][c]
+        sql = 'update %s set %s = %TBD where %s = %d' 
+        value = it.text()
+        if value.strip() == '':
+            sql = sql.replace('%TBD','%s', 1)
+            value = 'NULL'
+        elif tp == 'int':
+            sql = sql.replace('%TBD','%d', 1)
+            value = int(value)
+        elif tp == 'double':
+            sql = sql.replace('%TBD','%.2f', 1)
+            value = float(value)
+        else:
+            sql = sql.replace('%TBD','"%s"', 1)
+        sql = sql % (self.table,enHead,value,id_enHead,id_value)
+        self.bus.execSql(sql)
 
     def tablePopMenu(self, pos):
         self.popmenu.popup(QCursor.pos())
@@ -52,6 +81,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.edtFilter.setText(item.text())
 
     def initTable(self, table):
+        self.table = table
         self.tableData = self.bus.selectTableData(table)
         self.tableHeads = self.bus.selectTableHead(table)
         self.twData.clear()
