@@ -31,8 +31,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.tables = {'收支明细':'balance','测试':'test'}
         self.sqlTemplates = {'收支明细':'insert into balance (source,class1,class2,date,abstract,income,pay,balance,type,credence,remark) \
-                                                        values("%s","%s","%s","%s","%s",%f,%f,%f,"%s","%s","%s")',
-                            '测试':'insert into test (name,age,date) values("%s",%d,"%s")'}
+                                                        values(%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD)',
+                            '测试':'insert into test (name,age,date) values(%TBD,%TBD,%TBD)'}
         self.cmbTable.addItem('无')
         self.cmbTable.addItems(list(self.tables.keys()))
         #self.cmbTable.selectIndex = 0
@@ -116,28 +116,33 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.twData.setRowCount(1)
             self.btnAdd.setText('确认新增')
         else:
+            sql = self.sqlTemplates[key]
             r = 0
             datas = []
             for c in range(0,self.twData.columnCount()):
                 it = self.twData.item(r, c)
                 txt = None
-                if it == None:
-                    txt = 0
-                else:
+                #表格为空或都是空格就以None处理
+                if it != None:
                     txt = it.text()
                     if txt.strip() == '':
-                        txt = 0
-                    elif self.tableHeads[2][c] == 'int':
+                        txt = None
+                #根据DB中的类型对txt进行处理
+                if txt != None:
+                    if self.tableHeads[2][c] == 'int':
+                        sql = sql.replace('%TBD','%d', 1)
                         txt = int(txt)
                     elif self.tableHeads[2][c] == 'double':
+                        sql = sql.replace('%TBD','%.2f', 1)
                         txt = float(txt)
+                    else:
+                        sql = sql.replace('%TBD','"%s"', 1)
+                else:
+                    txt = 'NULL'
+                    sql = sql.replace('%TBD','%s', 1)
                 datas.append(txt)
-            sql = self.sqlTemplates[key] % tuple(datas)
-            print(sql)
-            sql = sql.replace('"0"', 'NULL')
-            sql = sql.replace('0', 'NULL')
-            print(sql)
-            #self.bus.execSql(sql)
+            sql = sql % tuple(datas)
+            self.bus.execSql(sql)
             self.btnAdd.setText('新增')
             self.btnRefreshClicked()
 
