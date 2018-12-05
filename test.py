@@ -104,30 +104,31 @@ def ReadAccountData():
         mp['unpaid'] = row[9].value
         mp['debt'] = row[10].value
         mp['percent'] = row[11].value
-        mp['invoice_type'] = row[12].value
-        mp['invoice_paid'] = row[13].value
-        mp['invoice_unpaid'] = row[14].value
-        mp['status'] = row[15].value
-        mp['unpaid_reason'] = row[16].value
-        mp['commission'] = row[17].value
-        mp['commission_date'] = row[18].value
-        mp['remark'] = row[19].value
-        #InsertToAccount(mp)
+        mp['invoice_commission'] = row[12].value
+        mp['invoice_type'] = row[13].value
+        mp['invoice_paid'] = row[14].value
+        mp['invoice_unpaid'] = row[15].value
+        mp['status'] = row[16].value
+        mp['unpaid_reason'] = row[17].value
+        mp['commission'] = row[18].value
+        mp['commission_date'] = row[19].value
+        mp['remark'] = row[20].value
+        InsertToAccount(mp)
 
-fn = '../../db/wanbo/2018万泊财务汇总表（46周）.xlsx'
+fn = '../../db/wanbo/2018财务汇总表（46周）.xlsx'
 wb = load_workbook(fn, read_only=True, data_only=True)
 for ws in wb:
     if ws.title == '应收账款汇总表':
         ReadAccountData()
-    #elif ws.title == '银行明细账':
-        #source = '建设银行（基本户）'
-        #ReadBalanceData(source)
-    #elif ws.title == '现金账户1明细账':
-        #source = '平安银行（姚洋）'
-        #ReadBalanceData(source)
-    #elif ws.title == '现金账户2明细账':
-        #source = '平安银行（李昱平）'
-        #ReadBalanceData(source)
+    elif ws.title == '银行明细账':
+        source = '建设银行（基本户）'
+        ReadBalanceData(source)
+    elif ws.title == '现金账户1明细账':
+        source = '平安银行（姚洋）'
+        ReadBalanceData(source)
+    elif ws.title == '现金账户2明细账':
+        source = '平安银行（李昱平）'
+        ReadBalanceData(source)
     else:
         pass
 del db

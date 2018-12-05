@@ -29,12 +29,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twData.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twData.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
 
-        self.tables = {'收支明细':'balance','测试':'test'}
-        self.sqlTemplates = {'收支明细':'insert into balance (source,class1,class2,date,abstract,income,pay,balance,type,credence,remark) \
-                                                        values(%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD)',
-                            '测试':'insert into test (name,age,date) values(%TBD,%TBD,%TBD)'}
         self.cmbTable.addItem('无')
-        self.cmbTable.addItems(list(self.tables.keys()))
+        self.cmbTable.addItems(list(self.bus.tables().keys()))
         #self.cmbTable.selectIndex = 0
 
         self.actFilter = QAction(self)
@@ -67,14 +63,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def cmbTableSelected(self, index):
         key = self.cmbTable.itemText(index)
-        if key in self.tables:
-            self.initTable(self.tables[key])
+        if key in self.bus.tables():
+            self.initTable(self.bus.tables()[key])
             self.refreshData(self.tableData, self.tableHeads)
 
     def btnRefreshClicked(self):
         key = self.cmbTable.currentText()
-        if key in self.tables:
-            self.initTable(self.tables[key])
+        if key in self.bus.tables():
+            self.initTable(self.bus.tables()[key])
             self.refreshData(self.tableData, self.tableHeads)
 
     def edtFilterChanged(self, txt):
@@ -109,17 +105,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def btnAddClicked(self):
         key = self.cmbTable.currentText()
-        if key not in self.tables:
+        if key not in self.bus.tables():
             return
         if self.btnAdd.text() == '新增':
             self.twData.clearContents()
             self.twData.setRowCount(1)
             self.btnAdd.setText('确认新增')
         else:
-            sql = self.sqlTemplates[key]
+            sql = self.bus.insertTemplates()[key]
             r = 0
             datas = []
-            for c in range(0,self.twData.columnCount()):
+            for c in range(1,self.twData.columnCount()):
                 it = self.twData.item(r, c)
                 txt = None
                 #表格为空或都是空格就以None处理

@@ -21,7 +21,7 @@ def getLogger(loggerName, logdir, logfile):
         os.mkdir(logdir)
     fh = logging.handlers.RotatingFileHandler('%s/%s' % (logdir,logfile), maxBytes=1*1024*1024, backupCount=2, encoding="utf8")
     #ffmt = logging.Formatter('%(asctime)s - %(name)s - %(threadName)s - %(levelname)s - %(message)s')
-    ffmt = logging.Formatter('%(message)s')
+    ffmt = logging.Formatter('%(asctime)s - %(message)s')
     fh.setFormatter(ffmt)
     fh.setLevel(logging.DEBUG)   # 设置级别如果低于LOG设置的级别则无效
     LOG.addHandler(fh)  # 如果不需要记录到文件，注释这行即可

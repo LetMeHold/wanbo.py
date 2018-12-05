@@ -3,41 +3,6 @@
 from gl import *
 import pymysql.cursors
 
-class Tools:
-
-    def queryTestSql(self):
-        return 'select * from test'
-
-    def queryVcZhSql(self, vc):
-        return 'select vc,vczh,unit from vcmap where vc="%s"' % vc
-
-    def queryRedPriceSql(self, vc, typ, spec):
-        if isinstance(vc, tuple):
-            return 'select vc,name,price from redprice where vc in %s and type="%s" and spec="%s"'\
-                % (str(vc),typ,spec)
-        else:
-            return 'select vc,name,price from redprice where vc="%s" and type="%s" and spec="%s"'\
-                % (vc,typ,spec)
-
-    def queryClassDiscountSql(self, classify, sn):
-        return 'select discount from classify where class="%s" and sn<=%d' % (classify,sn)
-
-    def queryStuffSql(self, vc, sn, typ, spec):
-        return 'select * from stuff where vc="%s" and sn=%d and type="%s" and spec="%s"' % (vc,sn,typ,spec)
-
-    def queryRecordSql(self, startdate, enddate, orderno, typ, spec, vc):
-        sql = 'select * from record where orderdate between "%s" and "%s"' % (startdate,enddate)
-        if orderno != '':
-            sql += ' and orderno like "%%%s%%"' % orderno
-        if typ != '':
-            sql += ' and ordertype="%s"' % typ
-        if spec != '':
-            sql += ' and orderspec="%s"' % spec
-        if vc != '':
-            sql += ' and vc="%s"' % vc
-        return sql
-
-
 class DB:
 
     def __init__(self, host='localhost', port=3306, db=None, user='root', pwd='root'):
@@ -87,5 +52,4 @@ class DB:
             #GL.LOG.error('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
             print('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
             return False
-
 
