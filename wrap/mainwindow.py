@@ -193,7 +193,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def tableJobItemChanged(self, it):
         r = it.row()
         c = it.column()
-        id_it = self.twQuery.item(r, 0)
+        id_it = self.twJob.item(r, 0)
         id_enHead = self.tableJobHead[0][0]
         id_value = int(id_it.text())
         enHead = self.tableJobHead[0][c]
