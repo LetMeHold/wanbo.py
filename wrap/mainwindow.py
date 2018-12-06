@@ -22,27 +22,102 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def init(self):
         self.twQuery.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.twQuery.customContextMenuRequested.connect(self.tablePopMenu)
+        self.twQuery.customContextMenuRequested.connect(self.tableQueryMenu)
         self.twQuery.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twQuery.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
+        self.twQuery.itemChanged.connect(self.tableQueryItemChanged)
+
+        self.twJob.setContextMenuPolicy(Qt.CustomContextMenu)
+        #self.twJob.customContextMenuRequested.connect(self.tableJobMenu)
+        self.twJob.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
+        self.twJob.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
+        self.twJob.itemChanged.connect(self.tableJobItemChanged)
 
         self.cmbTable.addItem('无')
         self.cmbTable.addItems(list(self.bus.tables().keys()))
         #self.cmbTable.selectIndex = 0
 
-        self.actFilter = QAction(self)
-        self.actFilter.setText('筛选')
-        self.popmenu = QMenu(self)
-        self.popmenu.addAction(self.actFilter)
-        self.actFilter.triggered.connect(self.actFilterClicked)
+        self.edtFilter.textChanged.connect(self.edtFilterChanged)
+        self.edtFilterJob.textChanged.connect(self.edtFilterJobChanged)
+
+        self.menuTableQuery = QMenu(self)
+
+        self.actQryFilter = QAction(self)
+        self.actQryFilter.setText('筛选')
+        self.menuTableQuery.addAction(self.actQryFilter)
+        self.actQryFilter.triggered.connect(self.actQryFilterClicked)
+
+        self.actQryRelateAccount = QAction(self)
+        self.actQryRelateAccount.setText('关联账款')
+        self.menuTableQuery.addAction(self.actQryRelateAccount)
+        self.actQryRelateAccount.triggered.connect(self.actQryRelateAccountClicked)
+
+        self.actQryRelateDetail = QAction(self)
+        self.actQryRelateDetail.setText('关联明细')
+        self.menuTableQuery.addAction(self.actQryRelateDetail)
+        self.actQryRelateDetail.triggered.connect(self.actQryRelateDetailClicked)
+
+        self.actQryTest = QAction(self)
+        self.actQryTest.setText('测试')
+        self.menuTableQuery.addAction(self.actQryTest)
+        self.actQryTest.triggered.connect(self.actQryTestClicked)
         
         self.cmbTable.currentIndexChanged.connect(self.cmbTableSelected)
         self.btnRefresh.clicked.connect(self.btnRefreshClicked)
-        self.edtFilter.textChanged.connect(self.edtFilterChanged)
         self.btnAdd.clicked.connect(self.btnAddClicked)
-        self.twQuery.itemChanged.connect(self.dataItemChanged)
 
-    def dataItemChanged(self, it):
+        self.tab.removeTab(1)   #默认隐藏job标签页
+
+    def tableQueryMenu(self, pos):
+        self.actQryRelateAccount.setVisible(False)
+        self.actQryRelateDetail.setVisible(False)
+        if self.twQuery.currentItem() != None:
+            self.actQryFilter.setVisible(True)
+            if self.tableQueryZh == '应收账款':
+                self.actQryRelateDetail.setVisible(True)
+            elif self.tableQueryZh == '收支明细':
+                self.actQryRelateAccount.setVisible(True)
+        self.menuTableQuery.popup(QCursor.pos())
+
+    def actQryFilterClicked(self):
+        item = self.twQuery.currentItem()
+        if item == None:
+            return
+        self.edtFilter.setText(item.text())
+
+    def resetTabJob(self):
+        self.twJob.clear()
+        self.edtFilterJob.clear()
+        self.tab.removeTab(1)
+
+    def actQryRelateAccountClicked(self):
+        item = self.twQuery.currentItem()
+        if item == None:
+            return
+        self.resetTabJob()
+        table_zh = '应收账款'
+        index = 1
+        self.tab.insertTab(index, self.tabJob, '操作-%s'%table_zh)
+        self.tab.setCurrentIndex(index)
+        self.fillTableJob(table_zh)
+        self.edtFilterJob.setText(item.text())
+
+    def actQryRelateDetailClicked(self):
+        item = self.twQuery.currentItem()
+        if item == None:
+            return
+        self.resetTabJob()
+        table_zh = '收支明细'
+        index = 1
+        self.tab.insertTab(index, self.tabJob, '操作-%s'%table_zh)
+        self.tab.setCurrentIndex(index)
+        self.fillTableJob(table_zh)
+        self.edtFilterJob.setText(item.text())
+
+    def actQryTestClicked(self):
+        pass
+
+    def tableQueryItemChanged(self, it):
         r = it.row()
         c = it.column()
         id_it = self.twQuery.item(r, 0)
@@ -66,30 +141,58 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sql = sql % (self.tableQuery,enHead,value,id_enHead,id_value)
         self.bus.execSql(sql)
 
-    def tablePopMenu(self, pos):
-        self.popmenu.popup(QCursor.pos())
+    def tableJobItemChanged(self, it):
+        r = it.row()
+        c = it.column()
+        id_it = self.twQuery.item(r, 0)
+        id_enHead = self.tableJobHead[0][0]
+        id_value = int(id_it.text())
+        enHead = self.tableJobHead[0][c]
+        tp = self.tableJobHead[2][c]
+        sql = 'update %s set %s = %TBD where %s = %d' 
+        value = it.text()
+        if value.strip() == '':
+            sql = sql.replace('%TBD','%s', 1)
+            value = 'NULL'
+        elif tp == 'int':
+            sql = sql.replace('%TBD','%d', 1)
+            value = int(value)
+        elif tp == 'double':
+            sql = sql.replace('%TBD','%.2f', 1)
+            value = float(value)
+        else:
+            sql = sql.replace('%TBD','"%s"', 1)
+        sql = sql % (self.tableJob,enHead,value,id_enHead,id_value)
+        self.bus.execSql(sql)
 
-    def actFilterClicked(self):
-        item = self.twQuery.currentItem()
-        self.edtFilter.setText(item.text())
-
-    def fillTableQuery(self, table):
-        self.tableQuery = table
+    def fillTableQuery(self, table=None):
+        if table == None:
+            table = self.cmbTable.currentText()
+            if table not in self.bus.tables():
+                print(table)
+                return
+        self.tableQuery = self.bus.tables()[table]
+        self.tableQueryZh = table
         self.tableQueryData = self.bus.selectTableData(self.tableQuery)
         self.tableQueryHead = self.bus.selectTableHead(self.tableQuery)
         self.twQuery.itemChanged.disconnect()
         self.fillTable(self.twQuery, self.tableQuery, self.tableQueryData, self.tableQueryHead)
-        self.twQuery.itemChanged.connect(self.dataItemChanged)
+        self.twQuery.itemChanged.connect(self.tableQueryItemChanged)
+
+    def fillTableJob(self, table):
+        self.tableJob = self.bus.tables()[table]
+        self.tableJobZh = table
+        self.tableJobData = self.bus.selectTableData(self.tableJob)
+        self.tableJobHead = self.bus.selectTableHead(self.tableJob)
+        self.twJob.itemChanged.disconnect()
+        self.fillTable(self.twJob, self.tableJob, self.tableJobData, self.tableJobHead)
+        self.twJob.itemChanged.connect(self.tableJobItemChanged)
 
     def cmbTableSelected(self, index):
-        key = self.cmbTable.itemText(index)
-        if key in self.bus.tables():
-            self.fillTableQuery(self.bus.tables()[key])
+        self.fillTableQuery()
 
     def btnRefreshClicked(self):
-        key = self.cmbTable.currentText()
-        if key in self.bus.tables():
-            self.fillTableQuery(self.bus.tables()[key])
+        self.fillTableQuery()
 
     def edtFilterChanged(self, txt):
         if len(txt) < 2:
@@ -108,6 +211,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.twQuery.setRowHidden(i, False)
         self.twQuery.setCurrentItem(current)
         self.twQuery.setVisible(True)
+
+    def edtFilterJobChanged(self, txt):
+        if len(txt) < 2:
+            return
+        current = self.twJob.currentItem()
+        items = self.twJob.findItems(txt, Qt.MatchContains)
+        showRows = []
+        for it in items:
+            if it.row() not in showRows:
+                showRows.append(it.row())
+        self.twJob.setVisible(False)
+        for i in range(0,self.twJob.rowCount()):
+            if i not in showRows:
+                self.twJob.setRowHidden(i, True)
+            else:
+                self.twJob.setRowHidden(i, False)
+        self.twJob.setCurrentItem(current)
+        self.twJob.setVisible(True)
 
     def fillTable(self, tw, table, data, head):
         tw.clear()
