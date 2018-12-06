@@ -151,7 +151,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QTableWidget" name="twData"/>
+         <widget class="QTableWidget" name="twQuery"/>
         </item>
        </layout>
       </widget>
