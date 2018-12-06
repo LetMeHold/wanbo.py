@@ -1,7 +1,7 @@
 from gl import *
 from ui import *
 from wrap.business import Business
-from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog
+from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox
 from PyQt5.QtCore import QDate,Qt
 from PyQt5.QtGui import QIcon,QCursor
 
@@ -21,25 +21,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         GL.LOG.info('主界面关闭')
 
     def init(self):
+        #数据管理(Query)页面的表格
         self.twQuery.setContextMenuPolicy(Qt.CustomContextMenu)
         self.twQuery.customContextMenuRequested.connect(self.tableQueryMenu)
         self.twQuery.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twQuery.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twQuery.itemChanged.connect(self.tableQueryItemChanged)
 
+        #操作(Job)页面的表格
         self.twJob.setContextMenuPolicy(Qt.CustomContextMenu)
-        #self.twJob.customContextMenuRequested.connect(self.tableJobMenu)
+        self.twJob.customContextMenuRequested.connect(self.tableJobMenu)
         self.twJob.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twJob.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twJob.itemChanged.connect(self.tableJobItemChanged)
 
-        self.cmbTable.addItem('无')
-        self.cmbTable.addItems(list(self.bus.tables().keys()))
-        #self.cmbTable.selectIndex = 0
-
-        self.edtFilter.textChanged.connect(self.edtFilterChanged)
-        self.edtFilterJob.textChanged.connect(self.edtFilterJobChanged)
-
+        #数据管理(Query)页面的右键菜单
         self.menuTableQuery = QMenu(self)
 
         self.actQryFilter = QAction(self)
@@ -61,12 +57,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actQryTest.setText('测试')
         self.menuTableQuery.addAction(self.actQryTest)
         self.actQryTest.triggered.connect(self.actQryTestClicked)
-        
+
+        #操作(Job)页面的右键菜单
+        self.menuTableJob = QMenu(self)
+
+        self.actJobRelate = QAction(self)
+        self.actJobRelate.setText('确认关联')
+        self.menuTableJob.addAction(self.actJobRelate)
+        self.actJobRelate.triggered.connect(self.actJobRelateClicked)
+
+        #其他控件初始化
+        self.cmbTable.addItem('无')
+        self.cmbTable.addItems(list(self.bus.tables().keys()))
+        #self.cmbTable.selectIndex = 0
+
+        #其他控件关联
         self.cmbTable.currentIndexChanged.connect(self.cmbTableSelected)
         self.btnRefresh.clicked.connect(self.btnRefreshClicked)
+        self.btnJobRefresh.clicked.connect(self.btnJobRefreshClicked)
         self.btnAdd.clicked.connect(self.btnAddClicked)
+        self.btnJobClose.clicked.connect(self.btnJobCloseClicked)
+        self.edtFilter.textChanged.connect(self.edtFilterChanged)
+        self.edtFilterJob.textChanged.connect(self.edtFilterJobChanged)
 
+        #更多需要初始化的内容
         self.tab.removeTab(1)   #默认隐藏job标签页
+
+    def btnJobCloseClicked(self):
+        self.resetTabJob()
 
     def tableQueryMenu(self, pos):
         self.actQryRelateAccount.setVisible(False)
@@ -78,6 +96,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             elif self.tableQueryZh == '收支明细':
                 self.actQryRelateAccount.setVisible(True)
         self.menuTableQuery.popup(QCursor.pos())
+
+    def tableJobMenu(self, pos):
+        self.actJobRelate.setVisible(False)
+        if self.tableJobZh=='应收账款' or self.tableJobZh=='收支明细':
+            self.actJobRelate.setVisible(True)
+        self.menuTableJob.popup(QCursor.pos())
 
     def actQryFilterClicked(self):
         item = self.twQuery.currentItem()
@@ -94,6 +118,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         item = self.twQuery.currentItem()
         if item == None:
             return
+        self.twDst = self.twQuery
+        self.itemDst = self.twQuery.item(item.row(), 1)
+        self.txtDst = None
         self.resetTabJob()
         table_zh = '应收账款'
         index = 1
@@ -106,6 +133,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         item = self.twQuery.currentItem()
         if item == None:
             return
+        self.twDst = self.twJob
+        self.itemDst = None
+        self.txtDst = self.twQuery.item(item.row(),0).text()
         self.resetTabJob()
         table_zh = '收支明细'
         index = 1
@@ -114,7 +144,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fillTableJob(table_zh)
         self.edtFilterJob.setText(item.text())
 
+    def actJobRelateClicked(self):
+        item = self.twJob.currentItem()
+        if item == None:
+            return
+        if self.itemDst!=None and self.txtDst==None:
+            self.txtDst = self.twJob.item(item.row(),0).text()
+        elif self.itemDst==None and self.txtDst!=None:
+            self.itemDst = self.twJob.item(item.row(),1)
+        else:
+            QMessageBox.critical(self, 'Error', '关联时数据有误, 请重试！')
+            return
+        self.itemDst.setText(self.txtDst)
+        self.twDst.setCurrentItem(self.itemDst)
+        self.twDst = None
+        self.itemDst = None
+        self.txtDst = None
+
     def actQryTestClicked(self):
+        #self.statusbar.showMessage('hhh', 5000)
+        #QMessageBox.critical(self, '失败', '大大的失败')
         pass
 
     def tableQueryItemChanged(self, it):
@@ -194,7 +243,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def btnRefreshClicked(self):
         self.fillTableQuery()
 
+    def btnJobRefreshClicked(self):
+        self.fillTableJob(self.tableJobZh)
+
     def edtFilterChanged(self, txt):
+        if txt == '':
+            for r in range(0,self.twQuery.rowCount()):
+                self.twQuery.setRowHidden(r, False)
+            return
         if len(txt) < 2:
             return
         current = self.twQuery.currentItem()
@@ -213,6 +269,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twQuery.setVisible(True)
 
     def edtFilterJobChanged(self, txt):
+        if txt == '':
+            for r in range(0,self.twJob.rowCount()):
+                self.twJob.setRowHidden(r, False)
+            return
         if len(txt) < 2:
             return
         current = self.twJob.currentItem()
