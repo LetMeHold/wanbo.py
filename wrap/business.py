@@ -9,16 +9,7 @@ class Business:
 
     def __init__(self):
         self.db = DB(db='wanbo')
-        self._tables = {'测试':'test','收支明细':'balance','应收账款':'account'}
-        self._insertTemplates = {
-            '收支明细':'insert into balance (account_id,source,class1,class2,date,abstract,income,pay,balance,type,credence,remark) \
-                values(%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD)',
-            '测试':'insert into test (name,age,date) \
-                values(%TBD,%TBD,%TBD)',
-            '应收账款':'insert into account (date,seller,contract,client,amount,paid,unpaid,debt,percent,remark,\
-                invoice_type,invoice_paid,invoice_unpaid,status,unpaid_reason,commission,commission_date,invoice_commission) \
-                values(%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD,%TBD)'
-            }
+        self._tables = {'测试':'test','收支明细':'balance','应收账款':'account','合同明细':'contract'}
 
     def __del__(self):
         if self.db != None:
@@ -27,9 +18,6 @@ class Business:
 
     def tables(self):
         return self._tables
-
-    def insertTemplates(self):
-        return self._insertTemplates
 
     def selectTableHead(self, table):
         sql = 'select %s_en,%s_zh,%s_tp from head where %s_en is not null' % (table,table,table,table)
@@ -42,6 +30,15 @@ class Business:
             zh.append(r['%s_zh' % table])
             tp.append(r['%s_tp' % table])
         return (en,zh,tp)
+
+    def getInsertTemplates(self, table, enHead):
+        prefix = 'insert into %s (' % table
+        suffix = 'values('
+        #编号由数据库自动生成，所以从1开始
+        for n in range(1, len(enHead)):
+            prefix += '%s,' % enHead[n]
+            suffix += '%TBD,'
+        return '%s) %s)' % (prefix.rstrip(','),suffix.rstrip(','))
 
     def selectTableData(self, table):
         sql = 'select * from %s' % table
@@ -65,8 +62,9 @@ class Business:
 
     def insertTable(self, tableZh, itemData):
         GL.LOG.info(itemData)
-        sql = self.insertTemplates()[tableZh]
-        head = self.selectTableHead(self.tables()[tableZh])
+        table = self.tables()[tableZh]
+        head = self.selectTableHead(table)
+        sql = self.getInsertTemplates(table, head[0])
         r = 0
         datas = []
         #编号由数据库自动生成，所以从1开始

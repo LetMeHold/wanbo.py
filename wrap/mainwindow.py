@@ -20,6 +20,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             del self.bus
         GL.LOG.info('主程序关闭')
 
+    def actQryTestClicked(self):
+        #self.statusbar.showMessage('hhh', 5000)
+        #QMessageBox.critical(self, '失败', '大大的失败')
+        sql = self.bus.getInsertTemplates(self.tableQuery, self.tableQueryHead[0])
+        GL.LOG.info(sql)
+        pass
+
+
     def init(self):
         #数据管理(Query)页面的表格
         self.twQuery.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -238,11 +246,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twDstHead = None
         self.itemDst = None
         self.txtDst = None
-
-    def actQryTestClicked(self):
-        #self.statusbar.showMessage('hhh', 5000)
-        #QMessageBox.critical(self, '失败', '大大的失败')
-        pass
 
     def fillTableQuery(self, table):
         if table not in self.bus.tables():

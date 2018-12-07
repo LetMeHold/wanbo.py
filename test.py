@@ -3,6 +3,7 @@ from wrap import *
 from openpyxl import Workbook
 from openpyxl import load_workbook
 import pymysql.cursors
+import datetime
 
 GL.LOG = getLogger('WanboLoger', 'logs', 'console.log')
 db = DB(db='wanbo')
@@ -19,7 +20,10 @@ def InsertToBalance(mp):
         if v == None:
             values_sql += 'NULL,'
         elif isinstance(v, str):
-            values_sql += '\'%s\',' % v
+            if v.strip() == '':
+                values_sql += 'NULL,'
+            else:
+                values_sql += '\'%s\',' % v
         else:
             values_sql += '%s,' % v
     keys_sql = keys_sql.rstrip(',')
@@ -37,7 +41,10 @@ def InsertToAccount(mp):
         if v==None or v=='-' or v=='/':
             values_sql += 'NULL,'
         elif isinstance(v, str):
-            values_sql += '\'%s\',' % v
+            if v.strip() == '':
+                values_sql += 'NULL,'
+            else:
+                values_sql += '\'%s\',' % v
         else:
             values_sql += '%s,' % v
     keys_sql = keys_sql.rstrip(',')
@@ -45,6 +52,30 @@ def InsertToAccount(mp):
     keys_sql += ')'
     values_sql += ')'
     sql = 'insert into account %s values%s' % (keys_sql,values_sql)
+    #print(sql)
+    db.exec(sql)
+
+def InsertToContract(mp):
+    keys_sql = '('
+    values_sql = '('
+    for k,v in mp.items():
+        keys_sql += '%s,' % k
+        if v==None or v=='-' or v=='/':
+            values_sql += 'NULL,'
+        elif isinstance(v, str):
+            if v.strip() == '':
+                values_sql += 'NULL,'
+            else:
+                values_sql += '"%s",' % v
+        elif isinstance(v, datetime.datetime):
+            values_sql += '"%s",' % v.strftime('%Y-%m-%d')
+        else:
+            values_sql += '%s,' % v
+    keys_sql = keys_sql.rstrip(',')
+    values_sql = values_sql.rstrip(',')
+    keys_sql += ')'
+    values_sql += ')'
+    sql = 'insert into contract %s values%s' % (keys_sql,values_sql)
     #print(sql)
     db.exec(sql)
 
@@ -115,20 +146,60 @@ def ReadAccountData():
         mp['remark'] = row[20].value
         InsertToAccount(mp)
 
+def ReadContractData():
+    n = 0
+    mp = {}
+    for row in ws.rows:
+        n = n + 1
+        if n <= 4:
+            continue
+        if n == 10:
+            break
+        if len(row) < 18:
+            return
+        mp['contract'] = row[1].value
+        mp['date'] = row[2].value
+        mp['seller'] = row[3].value
+        mp['client'] = row[4].value
+        mp['product'] = row[5].value
+        mp['model'] = row[6].value
+        mp['unit'] = row[7].value
+        mp['quantity'] = row[8].value
+        mp['price'] = row[9].value
+        mp['count'] = row[10].value
+        mp['amount'] = row[11].value
+        mp['tax_rate'] = row[12].value
+        mp['date_plan'] = row[13].value
+        mp['date_actual'] = row[14].value
+        mp['ontime'] = row[15].value
+        mp['ontime_whynot'] = row[16].value
+        mp['project'] = row[17].value
+        mp['province'] = row[18].value
+        mp['remark'] = row[19].value
+        InsertToContract(mp)
+
+#dt = datetime.datetime.now()
+#print(isinstance(dt, datetime.datetime))
+#print(isinstance(dt, str))
+#del db
+#exit()
+
 fn = '../../db/wanbo/2018财务汇总表（46周）.xlsx'
 wb = load_workbook(fn, read_only=True, data_only=True)
 for ws in wb:
-    if ws.title == '应收账款汇总表':
-        ReadAccountData()
-    elif ws.title == '银行明细账':
-        source = '建设银行（基本户）'
-        ReadBalanceData(source)
-    elif ws.title == '现金账户1明细账':
-        source = '平安银行（姚洋）'
-        ReadBalanceData(source)
-    elif ws.title == '现金账户2明细账':
-        source = '平安银行（李昱平）'
-        ReadBalanceData(source)
+    if ws.title == '合同明细':
+        ReadContractData()
+    #elif ws.title == '应收账款汇总表':
+        #ReadAccountData()
+    #elif ws.title == '银行明细账':
+        #source = '建设银行（基本户）'
+        #ReadBalanceData(source)
+    #elif ws.title == '现金账户1明细账':
+        #source = '平安银行（姚洋）'
+        #ReadBalanceData(source)
+    #elif ws.title == '现金账户2明细账':
+        #source = '平安银行（李昱平）'
+        #ReadBalanceData(source)
     else:
         pass
 del db
