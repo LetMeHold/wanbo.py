@@ -38,7 +38,7 @@ class DB:
             return False
 
     def query(self, sql):
-        GL.LOG.debug('sql: ' + sql)
+        #GL.LOG.debug('sql: ' + sql)
         result = []
         try:
             with self.conn.cursor() as cur:

@@ -1,7 +1,7 @@
 from gl import *
 from ui import *
 from wrap.business import Business
-from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog
+from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem
 from PyQt5.QtCore import QDate,Qt
 from PyQt5.QtGui import QIcon,QCursor
 
@@ -11,14 +11,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
         GL.LOG = getLogger('WanboLoger', 'logs', 'console.log')
+        GL.LOG.info('主程序启动')
         self.bus = Business()
         self.init()
-        GL.LOG.info('主界面启动')
 
     def closeEvent(self, event):
         if self.bus != None:
             del self.bus
-        GL.LOG.info('主界面关闭')
+        GL.LOG.info('主程序关闭')
 
     def init(self):
         #数据管理(Query)页面的表格
@@ -27,6 +27,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twQuery.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twQuery.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twQuery.itemDoubleClicked.connect(self.tableQueryItemEdit)
+
+        self.trQuery.setColumnCount(1)
+        self.trQuery.setHeaderHidden(True)
+        t = QTreeWidgetItem(self.trQuery, ['表格',])
+        for k,v in self.bus.tables().items():
+            QTreeWidgetItem(t, [k,])
+        self.trQuery.expandAll()
+        self.trQuery.currentItemChanged.connect(self.treeQueryItemActivated)
+        self.trQuery.sortItems(0, Qt.AscendingOrder)
 
         #操作(Job)页面的表格
         self.twJob.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -66,13 +75,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.menuTableJob.addAction(self.actJobRelate)
         self.actJobRelate.triggered.connect(self.actJobRelateClicked)
 
-        #其他控件初始化
-        self.cmbTable.addItem('无')
-        self.cmbTable.addItems(list(self.bus.tables().keys()))
-        #self.cmbTable.selectIndex = 0
-
         #其他控件关联
-        self.cmbTable.currentIndexChanged.connect(self.cmbTableSelected)
         self.btnRefresh.clicked.connect(self.btnRefreshClicked)
         self.btnJobRefresh.clicked.connect(self.btnJobRefreshClicked)
         self.btnAdd.clicked.connect(self.btnAddClicked)
@@ -82,6 +85,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         #更多需要初始化的内容
         self.tab.removeTab(1)   #默认隐藏job标签页
+        self.tableQuery = None
+        self.tableQueryZh = None
+        self.tableQueryData = None
+        self.tableQueryHead = None
+        self.tableJob = None
+        self.tableJobZh = None
+        self.tableJobData = None
+        self.tableJobHead = None
+        self.tableDst = None
+        self.twDst = None
+        self.twDstHead = None
+        self.itemDst = None
+        self.txtDst = None
+
+    def treeQueryItemActivated(self, itemNew, itemOld):
+        self.fillTableQuery(itemNew.text(0))
 
     def tableQueryItemEdit(self, item):
         r = item.row()
@@ -98,22 +117,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             enHead = self.tableQueryHead[0][c]
             zhHead = self.tableQueryHead[1][c]
             tp = self.tableQueryHead[2][c]
-            sql = 'update %s set %s = %TBD where %s = %d' 
-            GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableQuery,id_value,zhHead,old,new))
             item.setText(new)
-            if new.strip() == '':
-                sql = sql.replace('%TBD','%s', 1)
-                new = 'NULL'
-            elif tp == 'int':
-                sql = sql.replace('%TBD','%d', 1)
-                new = int(new)
-            elif tp == 'double':
-                sql = sql.replace('%TBD','%.2f', 1)
-                new = float(new)
-            else:
-                sql = sql.replace('%TBD','"%s"', 1)
-            sql = sql % (self.tableQuery,enHead,new,id_enHead,id_value)
-            self.bus.execSql(sql)
+            GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableQuery,id_value,zhHead,old,new))
+            self.bus.updateTableById(self.tableQuery, enHead, tp, new, id_enHead, id_value)
 
     def tableJobItemEdit(self, item):
         r = item.row()
@@ -130,22 +136,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             enHead = self.tableJobHead[0][c]
             zhHead = self.tableJobHead[1][c]
             tp = self.tableJobHead[2][c]
-            sql = 'update %s set %s = %TBD where %s = %d' 
-            GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableJob,id_value,zhHead,old,new))
             item.setText(new)
-            if new.strip() == '':
-                sql = sql.replace('%TBD','%s', 1)
-                new = 'NULL'
-            elif tp == 'int':
-                sql = sql.replace('%TBD','%d', 1)
-                new = int(new)
-            elif tp == 'double':
-                sql = sql.replace('%TBD','%.2f', 1)
-                new = float(new)
-            else:
-                sql = sql.replace('%TBD','"%s"', 1)
-            sql = sql % (self.tableJob,enHead,new,id_enHead,id_value)
-            self.bus.execSql(sql)
+            GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableJob,id_value,zhHead,old,new))
+            self.bus.updateTableById(self.tableJob, enHead, tp, new, id_enHead, id_value)
 
     def btnJobCloseClicked(self):
         self.resetTabJob()
@@ -182,9 +175,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         item = self.twQuery.currentItem()
         if item == None:
             return
-        self.twDst = self.twQuery
-        self.itemDst = self.twQuery.item(item.row(), 1)
-        self.txtDst = None
         self.resetTabJob()
         table_zh = '应收账款'
         index = 1
@@ -193,13 +183,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fillTableJob(table_zh)
         self.edtFilterJob.setText(item.text())
 
+        self.tableDst = self.tableQuery
+        self.twDst = self.twQuery
+        self.tableDstHead = self.tableQueryHead
+        self.itemDst = self.twQuery.item(item.row(), 1)
+        self.txtDst = None
+
     def actQryRelateDetailClicked(self):
         item = self.twQuery.currentItem()
         if item == None:
             return
-        self.twDst = self.twJob
-        self.itemDst = None
-        self.txtDst = self.twQuery.item(item.row(),0).text()
         self.resetTabJob()
         table_zh = '收支明细'
         index = 1
@@ -207,6 +200,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tab.setCurrentIndex(index)
         self.fillTableJob(table_zh)
         self.edtFilterJob.setText(item.text())
+        #操作页加载后才能取到tableJob的各项数据
+        self.tableDst = self.tableJob
+        self.twDst = self.twJob
+        self.tableDstHead = self.tableJobHead
+        self.itemDst = None
+        self.txtDst = self.twQuery.item(item.row(),0).text()
 
     def actJobRelateClicked(self):
         item = self.twJob.currentItem()
@@ -219,9 +218,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             QMessageBox.critical(self, 'Error', '关联时数据有误, 请重试！')
             return
+        r = item.row()
+        c = 1   #关联就是修改明细表的第二列
+        id_it = self.twDst.item(r, 0)
+        id_enHead = self.tableDstHead[0][0]
+        id_value = int(id_it.text())
+        enHead = self.tableDstHead[0][c]
+        zhHead = self.tableDstHead[1][c]
+        tp = self.tableDstHead[2][c]
+        old = self.itemDst.text()
         self.itemDst.setText(self.txtDst)
+        GL.LOG.info(self.tableJob)
+        GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableDst,id_value,zhHead,old,self.txtDst))
+        self.bus.updateTableById(self.tableDst, enHead, tp, self.txtDst, id_enHead, id_value)
         self.twDst.setCurrentItem(self.itemDst)
+
+        self.tableDst = None
         self.twDst = None
+        self.twDstHead = None
         self.itemDst = None
         self.txtDst = None
 
@@ -230,12 +244,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #QMessageBox.critical(self, '失败', '大大的失败')
         pass
 
-    def fillTableQuery(self, table=None):
-        if table == None:
-            table = self.cmbTable.currentText()
-            if table not in self.bus.tables():
-                print(table)
-                return
+    def fillTableQuery(self, table):
+        if table not in self.bus.tables():
+            return
         self.tableQuery = self.bus.tables()[table]
         self.tableQueryZh = table
         self.tableQueryData = self.bus.selectTableData(self.tableQuery)
@@ -249,11 +260,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableJobHead = self.bus.selectTableHead(self.tableJob)
         self.fillTable(self.twJob, self.tableJob, self.tableJobData, self.tableJobHead)
 
-    def cmbTableSelected(self, index):
-        self.fillTableQuery()
+    #def cmbTableSelected(self, index):
+        #self.fillTableQuery()
 
     def btnRefreshClicked(self):
-        self.fillTableQuery()
+        self.fillTableQuery(self.tableQueryZh)
 
     def btnJobRefreshClicked(self):
         self.fillTableJob(self.tableJobZh)
@@ -323,41 +334,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tw.setVisible(True)
 
     def btnAddClicked(self):
-        key = self.cmbTable.currentText()
-        if key not in self.bus.tables():
+        if self.tableQueryZh not in self.bus.tables():
             return
         if self.btnAdd.text() == '新增':
             self.twQuery.clearContents()
             self.twQuery.setRowCount(1)
             self.btnAdd.setText('确认新增')
         else:
-            sql = self.bus.insertTemplates()[key]
-            r = 0
             datas = []
-            for c in range(1,self.twQuery.columnCount()):
+            r = 0
+            for c in range(0,self.twQuery.columnCount()):
                 it = self.twQuery.item(r, c)
                 txt = None
                 #表格为空或都是空格就以None处理
                 if it != None:
                     txt = it.text()
                     if txt.strip() == '':
-                        txt = None
-                #根据DB中的类型对txt进行处理
-                if txt != None:
-                    if self.tableQueryHead[2][c] == 'int':
-                        sql = sql.replace('%TBD','%d', 1)
-                        txt = int(txt)
-                    elif self.tableQueryHead[2][c] == 'double':
-                        sql = sql.replace('%TBD','%.2f', 1)
-                        txt = float(txt)
-                    else:
-                        sql = sql.replace('%TBD','"%s"', 1)
+                        txt = 'NULL'
                 else:
                     txt = 'NULL'
-                    sql = sql.replace('%TBD','%s', 1)
                 datas.append(txt)
-            sql = sql % tuple(datas)
-            self.bus.execSql(sql)
+            self.bus.insertTable(self.tableQueryZh, datas)
             self.btnAdd.setText('新增')
             self.btnRefreshClicked()
 
