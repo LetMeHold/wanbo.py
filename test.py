@@ -12,50 +12,7 @@ def TestDB():
     sql = 'select * from test'
     print(db.query(sql))
 
-def InsertToBalance(mp):
-    keys_sql = '('
-    values_sql = '('
-    for k,v in mp.items():
-        keys_sql += '%s,' % k
-        if v == None:
-            values_sql += 'NULL,'
-        elif isinstance(v, str):
-            if v.strip() == '':
-                values_sql += 'NULL,'
-            else:
-                values_sql += '\'%s\',' % v
-        else:
-            values_sql += '%s,' % v
-    keys_sql = keys_sql.rstrip(',')
-    values_sql = values_sql.rstrip(',')
-    keys_sql += ')'
-    values_sql += ')'
-    sql = 'insert into balance %s values%s' % (keys_sql,values_sql)
-    db.exec(sql)
-    
-def InsertToAccount(mp):
-    keys_sql = '('
-    values_sql = '('
-    for k,v in mp.items():
-        keys_sql += '%s,' % k
-        if v==None or v=='-' or v=='/':
-            values_sql += 'NULL,'
-        elif isinstance(v, str):
-            if v.strip() == '':
-                values_sql += 'NULL,'
-            else:
-                values_sql += '\'%s\',' % v
-        else:
-            values_sql += '%s,' % v
-    keys_sql = keys_sql.rstrip(',')
-    values_sql = values_sql.rstrip(',')
-    keys_sql += ')'
-    values_sql += ')'
-    sql = 'insert into account %s values%s' % (keys_sql,values_sql)
-    #print(sql)
-    db.exec(sql)
-
-def InsertToContract(mp):
+def insertToTable(mp, table):
     keys_sql = '('
     values_sql = '('
     for k,v in mp.items():
@@ -75,7 +32,7 @@ def InsertToContract(mp):
     values_sql = values_sql.rstrip(',')
     keys_sql += ')'
     values_sql += ')'
-    sql = 'insert into contract %s values%s' % (keys_sql,values_sql)
+    sql = 'insert into %s %s values%s' % (table,keys_sql,values_sql)
     #print(sql)
     db.exec(sql)
 
@@ -106,7 +63,7 @@ def ReadBalanceData(source):
         mp['credence'] = row[10].value
         mp['remark'] = row[11].value
         mp['source'] = source
-        InsertToBalance(mp)
+        insertToTable(mp, 'balance')
 
 def ReadAccountData():
     n = 0
@@ -144,7 +101,7 @@ def ReadAccountData():
         mp['commission'] = row[18].value
         mp['commission_date'] = row[19].value
         mp['remark'] = row[20].value
-        InsertToAccount(mp)
+        insertToTable(mp, 'account')
 
 def ReadContractData():
     n = 0
@@ -176,30 +133,24 @@ def ReadContractData():
         mp['project'] = row[17].value
         mp['province'] = row[18].value
         mp['remark'] = row[19].value
-        InsertToContract(mp)
-
-#dt = datetime.datetime.now()
-#print(isinstance(dt, datetime.datetime))
-#print(isinstance(dt, str))
-#del db
-#exit()
+        insertToTable(mp, 'contract')
 
 fn = '../../db/wanbo/2018财务汇总表（46周）.xlsx'
 wb = load_workbook(fn, read_only=True, data_only=True)
 for ws in wb:
     if ws.title == '合同明细':
         ReadContractData()
-    #elif ws.title == '应收账款汇总表':
-        #ReadAccountData()
-    #elif ws.title == '银行明细账':
-        #source = '建设银行（基本户）'
-        #ReadBalanceData(source)
-    #elif ws.title == '现金账户1明细账':
-        #source = '平安银行（姚洋）'
-        #ReadBalanceData(source)
-    #elif ws.title == '现金账户2明细账':
-        #source = '平安银行（李昱平）'
-        #ReadBalanceData(source)
+    elif ws.title == '应收账款汇总表':
+        ReadAccountData()
+    elif ws.title == '银行明细账':
+        source = '建设银行（基本户）'
+        ReadBalanceData(source)
+    elif ws.title == '现金账户1明细账':
+        source = '平安银行（姚洋）'
+        ReadBalanceData(source)
+    elif ws.title == '现金账户2明细账':
+        source = '平安银行（李昱平）'
+        ReadBalanceData(source)
     else:
         pass
 del db
