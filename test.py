@@ -135,10 +135,44 @@ def ReadContractData():
         mp['remark'] = row[19].value
         insertToTable(mp, 'contract')
 
+def ReadInvoiceData():
+    n = 0
+    mp = {}
+    for row in ws.rows:
+        n = n + 1
+        if n <= 2:
+            continue
+        if n == 10:
+            break
+        if len(row) < 16:
+            return
+        mp['contract'] = row[0].value
+        year = row[1].value
+        month = row[2].value
+        day = row[3].value
+        mp['date'] = '%d-%d-%d' % (year,month,day)
+        mp['invoice_no'] = row[4].value
+        mp['invoice_client'] = row[5].value
+        mp['invoice_content'] = row[6].value
+        mp['model'] = row[7].value
+        mp['quantity'] = row[8].value
+        mp['price'] = row[9].value
+        mp['price_notax'] = row[10].value
+        mp['tax'] = row[11].value
+        mp['amount'] = row[12].value
+        mp['invoice_amount'] = row[13].value
+        mp['invoice_type'] = row[14].value
+        mp['status'] = row[15].value
+        mp['refund'] = row[16].value
+        mp['remark'] = row[17].value
+        insertToTable(mp, 'invoice')
+
 fn = '../../db/wanbo/2018财务汇总表（46周）.xlsx'
 wb = load_workbook(fn, read_only=True, data_only=True)
 for ws in wb:
-    if ws.title == '合同明细':
+    if ws.title == '开票明细表':
+        ReadInvoiceData()
+    elif ws.title == '合同明细':
         ReadContractData()
     elif ws.title == '应收账款汇总表':
         ReadAccountData()

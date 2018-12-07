@@ -9,7 +9,7 @@ class Business:
 
     def __init__(self):
         self.db = DB(db='wanbo')
-        self._tables = {'测试':'test','收支明细':'balance','应收账款':'account','合同明细':'contract'}
+        self._tables = {'测试':'test','收支明细':'balance','应收账款':'account','合同明细':'contract','开票明细':'invoice'}
 
     def __del__(self):
         if self.db != None:
