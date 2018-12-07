@@ -25,7 +25,7 @@ class DB:
         return (self.count_success,self.count_failed)
 
     def exec(self, sql):
-        GL.LOG.debug(sql)
+        GL.LOG.debug('sql: ' + sql)
         try:
             with self.conn.cursor() as cur:
                 cur.execute(sql)
@@ -34,8 +34,7 @@ class DB:
                 return True
         except:
             self.count_failed += 1
-            #GL.LOG.error('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
-            print('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
+            GL.LOG.error('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
             return False
 
     def query(self, sql):
@@ -49,7 +48,6 @@ class DB:
                 return result
         except:
             self.count_failed += 1
-            #GL.LOG.error('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
-            print('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
+            GL.LOG.error('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
             return False
 

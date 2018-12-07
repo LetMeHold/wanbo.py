@@ -1,7 +1,7 @@
 from gl import *
 from ui import *
 from wrap.business import Business
-from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox
+from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog
 from PyQt5.QtCore import QDate,Qt
 from PyQt5.QtGui import QIcon,QCursor
 
@@ -26,14 +26,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twQuery.customContextMenuRequested.connect(self.tableQueryMenu)
         self.twQuery.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twQuery.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
-        self.twQuery.itemChanged.connect(self.tableQueryItemChanged)
+        self.twQuery.itemDoubleClicked.connect(self.tableQueryItemEdit)
 
         #操作(Job)页面的表格
         self.twJob.setContextMenuPolicy(Qt.CustomContextMenu)
         self.twJob.customContextMenuRequested.connect(self.tableJobMenu)
         self.twJob.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twJob.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
-        self.twJob.itemChanged.connect(self.tableJobItemChanged)
+        self.twJob.itemDoubleClicked.connect(self.tableJobItemEdit)
 
         #数据管理(Query)页面的右键菜单
         self.menuTableQuery = QMenu(self)
@@ -82,6 +82,70 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         #更多需要初始化的内容
         self.tab.removeTab(1)   #默认隐藏job标签页
+
+    def tableQueryItemEdit(self, item):
+        r = item.row()
+        c = item.column()
+        if c == 0:
+            self.statusbar.showMessage('编号不可修改！', 5000)
+            return
+        old = item.text()
+        (new, ok) = QInputDialog.getText(self,'编辑表格','输入新内容：', text=old)
+        if ok and new!=old:
+            id_it = self.twQuery.item(r, 0)
+            id_enHead = self.tableQueryHead[0][0]
+            id_value = int(id_it.text())
+            enHead = self.tableQueryHead[0][c]
+            zhHead = self.tableQueryHead[1][c]
+            tp = self.tableQueryHead[2][c]
+            sql = 'update %s set %s = %TBD where %s = %d' 
+            GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableQuery,id_value,zhHead,old,new))
+            item.setText(new)
+            if new.strip() == '':
+                sql = sql.replace('%TBD','%s', 1)
+                new = 'NULL'
+            elif tp == 'int':
+                sql = sql.replace('%TBD','%d', 1)
+                new = int(new)
+            elif tp == 'double':
+                sql = sql.replace('%TBD','%.2f', 1)
+                new = float(new)
+            else:
+                sql = sql.replace('%TBD','"%s"', 1)
+            sql = sql % (self.tableQuery,enHead,new,id_enHead,id_value)
+            self.bus.execSql(sql)
+
+    def tableJobItemEdit(self, item):
+        r = item.row()
+        c = item.column()
+        if c == 0:
+            self.statusbar.showMessage('编号不可修改！', 5000)
+            return
+        old = item.text()
+        (new, ok) = QInputDialog.getText(self,'编辑表格','输入新内容：', text=old)
+        if ok and new!=old:
+            id_it = self.twJob.item(r, 0)
+            id_enHead = self.tableJobHead[0][0]
+            id_value = int(id_it.text())
+            enHead = self.tableJobHead[0][c]
+            zhHead = self.tableJobHead[1][c]
+            tp = self.tableJobHead[2][c]
+            sql = 'update %s set %s = %TBD where %s = %d' 
+            GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableJob,id_value,zhHead,old,new))
+            item.setText(new)
+            if new.strip() == '':
+                sql = sql.replace('%TBD','%s', 1)
+                new = 'NULL'
+            elif tp == 'int':
+                sql = sql.replace('%TBD','%d', 1)
+                new = int(new)
+            elif tp == 'double':
+                sql = sql.replace('%TBD','%.2f', 1)
+                new = float(new)
+            else:
+                sql = sql.replace('%TBD','"%s"', 1)
+            sql = sql % (self.tableJob,enHead,new,id_enHead,id_value)
+            self.bus.execSql(sql)
 
     def btnJobCloseClicked(self):
         self.resetTabJob()
@@ -166,54 +230,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #QMessageBox.critical(self, '失败', '大大的失败')
         pass
 
-    def tableQueryItemChanged(self, it):
-        r = it.row()
-        c = it.column()
-        id_it = self.twQuery.item(r, 0)
-        id_enHead = self.tableQueryHead[0][0]
-        id_value = int(id_it.text())
-        enHead = self.tableQueryHead[0][c]
-        tp = self.tableQueryHead[2][c]
-        sql = 'update %s set %s = %TBD where %s = %d' 
-        value = it.text()
-        if value.strip() == '':
-            sql = sql.replace('%TBD','%s', 1)
-            value = 'NULL'
-        elif tp == 'int':
-            sql = sql.replace('%TBD','%d', 1)
-            value = int(value)
-        elif tp == 'double':
-            sql = sql.replace('%TBD','%.2f', 1)
-            value = float(value)
-        else:
-            sql = sql.replace('%TBD','"%s"', 1)
-        sql = sql % (self.tableQuery,enHead,value,id_enHead,id_value)
-        self.bus.execSql(sql)
-
-    def tableJobItemChanged(self, it):
-        r = it.row()
-        c = it.column()
-        id_it = self.twJob.item(r, 0)
-        id_enHead = self.tableJobHead[0][0]
-        id_value = int(id_it.text())
-        enHead = self.tableJobHead[0][c]
-        tp = self.tableJobHead[2][c]
-        sql = 'update %s set %s = %TBD where %s = %d' 
-        value = it.text()
-        if value.strip() == '':
-            sql = sql.replace('%TBD','%s', 1)
-            value = 'NULL'
-        elif tp == 'int':
-            sql = sql.replace('%TBD','%d', 1)
-            value = int(value)
-        elif tp == 'double':
-            sql = sql.replace('%TBD','%.2f', 1)
-            value = float(value)
-        else:
-            sql = sql.replace('%TBD','"%s"', 1)
-        sql = sql % (self.tableJob,enHead,value,id_enHead,id_value)
-        self.bus.execSql(sql)
-
     def fillTableQuery(self, table=None):
         if table == None:
             table = self.cmbTable.currentText()
@@ -224,18 +240,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableQueryZh = table
         self.tableQueryData = self.bus.selectTableData(self.tableQuery)
         self.tableQueryHead = self.bus.selectTableHead(self.tableQuery)
-        self.twQuery.itemChanged.disconnect()
         self.fillTable(self.twQuery, self.tableQuery, self.tableQueryData, self.tableQueryHead)
-        self.twQuery.itemChanged.connect(self.tableQueryItemChanged)
 
     def fillTableJob(self, table):
         self.tableJob = self.bus.tables()[table]
         self.tableJobZh = table
         self.tableJobData = self.bus.selectTableData(self.tableJob)
         self.tableJobHead = self.bus.selectTableHead(self.tableJob)
-        self.twJob.itemChanged.disconnect()
         self.fillTable(self.twJob, self.tableJob, self.tableJobData, self.tableJobHead)
-        self.twJob.itemChanged.connect(self.tableJobItemChanged)
 
     def cmbTableSelected(self, index):
         self.fillTableQuery()
@@ -305,8 +317,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     tmp = ''
                 it = QTableWidgetItem(str(tmp))
                 tw.setItem(r,c,it)
-                if c == 0:
-                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                #if c == 0:
+                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                 tw.setRowHidden(r, False)
         tw.setVisible(True)
 
