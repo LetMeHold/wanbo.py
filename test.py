@@ -142,7 +142,7 @@ def ReadInvoiceData():
         n = n + 1
         if n <= 2:
             continue
-        if n == 10:
+        if n == 100:
             break
         if len(row) < 16:
             return
@@ -170,12 +170,12 @@ def ReadInvoiceData():
 fn = '../../db/wanbo/2018财务汇总表（46周）.xlsx'
 wb = load_workbook(fn, read_only=True, data_only=True)
 for ws in wb:
-    #if ws.title == '开票明细表':
-        #ReadInvoiceData()
+    if ws.title == '开票明细表':
+        ReadInvoiceData()
     #elif ws.title == '合同明细':
         #ReadContractData()
-    if ws.title == '应收账款汇总表':
-        ReadAccountData()
+    #if ws.title == '应收账款汇总表':
+        #ReadAccountData()
     #elif ws.title == '银行明细账':
         #source = '建设银行（基本户）'
         #ReadBalanceData(source)

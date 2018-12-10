@@ -27,7 +27,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #GL.LOG.info(sql)
         #ret = self.bus.getContractAmount('year(date) = 2018')
         #ret = self.bus.getContractAmount('合同总额')
-        ret = self.bus.getAccountStats()
+        ret = self.bus.getInvoiceStats()
         print(ret)
         pass
 
@@ -400,8 +400,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 it1 = QTableWidgetItem(str(k))
                 it1.setFlags(it1.flags() & ~Qt.ItemIsEditable)
                 it1.setBackground(QBrush(Qt.lightGray))
-                #it1.setBackground(QBrush(Qt.gray))
-                it2 = QTableWidgetItem(str(v))
                 if struct[k]['form'] == '百分比':
                     it2 = QTableWidgetItem('%.2f%%' % (v*100))
                 else:
@@ -411,5 +409,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 col = struct[k]['column']
                 tw.setItem(row, col, it1)
                 tw.setItem(row+1, col, it2)
+        elif itemNew.text(0) == '开票统计':
+            tw = self.twStats
+            tw.clear()
+            heads = self.bus.statsInvoice()
+            ret = self.bus.getInvoiceStats()
+            tw.setColumnCount(len(heads))
+            tw.setRowCount(len(ret))
+            tw.setHorizontalHeaderLabels(heads)
+            row = 0
+            for tmp in ret:
+                for k,v in tmp.items():
+                    if v == None:
+                        v = 0.0
+                    col = heads.index(k)
+                    it = QTableWidgetItem(str(v))
+                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                    tw.setItem(row, col, it)
+                it = QTableWidgetItem(str(v))
+                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                tw.setItem(row, col, it)
+                row += 1
 
 

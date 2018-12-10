@@ -34,6 +34,7 @@ class Business:
             '历年合同欠款率':{'row':10,'column':1,'form':'百分比'},
             '总欠款率':{'row':10,'column':2,'form':'百分比'}
         }
+        self._statsInvoice = ['月份','未税金额','税额','合计']
 
     def __del__(self):
         if self.db != None:
@@ -48,6 +49,9 @@ class Business:
 
     def statsAccount(self):
         return self._statsAccount
+
+    def statsInvoice(self):
+        return self._statsInvoice
 
     def selectTableHead(self, table):
         sql = 'select %s_en,%s_zh,%s_tp from head where %s_en is not null' % (table,table,table,table)
@@ -123,6 +127,13 @@ class Business:
         else:
             sql = 'select sum(amount) as %s from contract where %s' % (alias,condition)
         return self.db.query(sql)
+
+    def getInvoiceStats(self):
+        sql = 'select date_format(date,"%Y-%m")as"月份",sum(price_notax)as"未税金额",sum(tax)as"税额" from invoice group by date_format(date,"%Y-%m")'
+        ret = self.db.query(sql)
+        for i in range(0,len(ret)):
+            ret[i]['合计'] = ret[i]['未税金额'] + ret[i]['税额']
+        return ret
 
     def getAccountStats(self):
         mp = {}
