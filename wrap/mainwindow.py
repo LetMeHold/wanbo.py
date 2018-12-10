@@ -3,7 +3,7 @@ from ui import *
 from wrap.business import Business
 from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem
 from PyQt5.QtCore import QDate,Qt
-from PyQt5.QtGui import QIcon,QCursor
+from PyQt5.QtGui import QIcon,QCursor,QBrush
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
@@ -23,8 +23,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def actQryTestClicked(self):
         #self.statusbar.showMessage('hhh', 5000)
         #QMessageBox.critical(self, '失败', '大大的失败')
-        sql = self.bus.getInsertTemplates(self.tableQuery, self.tableQueryHead[0])
-        GL.LOG.info(sql)
+        #sql = self.bus.getInsertTemplates(self.tableQuery, self.tableQueryHead[0])
+        #GL.LOG.info(sql)
+        #ret = self.bus.getContractAmount('year(date) = 2018')
+        #ret = self.bus.getContractAmount('合同总额')
+        ret = self.bus.getAccountStats()
+        print(ret)
         pass
 
 
@@ -38,12 +42,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.trQuery.setColumnCount(1)
         self.trQuery.setHeaderHidden(True)
-        t = QTreeWidgetItem(self.trQuery, ['表格',])
+        t = QTreeWidgetItem(self.trQuery, ['表格管理',])
         for k,v in self.bus.tables().items():
             QTreeWidgetItem(t, [k,])
         self.trQuery.expandAll()
         self.trQuery.currentItemChanged.connect(self.treeQueryItemActivated)
         self.trQuery.sortItems(0, Qt.AscendingOrder)
+
+        #统计汇总(stats)页面的表格
+        self.twStats.setContextMenuPolicy(Qt.CustomContextMenu)
+        #self.twStats.customContextMenuRequested.connect(self.tableStatsMenu)
+        self.twStats.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
+        self.twStats.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
+        #self.twStats.itemDoubleClicked.connect(self.tableStatsItemEdit)
+
+        self.trStats.setColumnCount(1)
+        self.trStats.setHeaderHidden(True)
+        t = QTreeWidgetItem(self.trStats, ['统计汇总',])
+        for k in self.bus.stats():
+            QTreeWidgetItem(t, [k,])
+        self.trStats.expandAll()
+        self.trStats.currentItemChanged.connect(self.treeStatsItemActivated)
+        self.trStats.sortItems(0, Qt.AscendingOrder)
 
         #操作(Job)页面的表格
         self.twJob.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -92,7 +112,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.edtFilterJob.textChanged.connect(self.edtFilterJobChanged)
 
         #更多需要初始化的内容
-        self.tab.removeTab(1)   #默认隐藏job标签页
+        self.jobTabIndex = 2
+        self.tab.removeTab(self.jobTabIndex)   #默认隐藏job标签页
         self.tableQuery = None
         self.tableQueryZh = None
         self.tableQueryData = None
@@ -185,8 +206,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return
         self.resetTabJob()
         table_zh = '应收账款'
-        index = 1
-        self.tab.insertTab(index, self.tabJob, '操作-%s'%table_zh)
+        self.tab.insertTab(self.jobTabIndex, self.tabJob, '操作-%s'%table_zh)
         self.tab.setCurrentIndex(index)
         self.fillTableJob(table_zh)
         self.edtFilterJob.setText(item.text())
@@ -360,4 +380,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.bus.insertTable(self.tableQueryZh, datas)
             self.btnAdd.setText('新增')
             self.btnRefreshClicked()
+
+    def treeStatsItemActivated(self, itemNew, itemOld):
+        if itemNew.text(0) == '应收账款统计':
+            tw = self.twStats
+            tw.clear()
+            tw.setColumnCount(7)
+            tw.setRowCount(13)
+            ret = self.bus.getAccountStats()
+            ret['今年合同欠款率'] = ret['今年未收款额'] / ret['今年合同额']
+            ret['历年合同欠款率'] = ret['历年未收款额'] / ret['历年合同额']
+            ret['总欠款率'] = ret['未收款总额'] / ret['合同总额']
+            struct = self.bus.statsAccount()
+            for k,v in ret.items():
+                if k not in struct:
+                    continue
+                if v == None:
+                    v = 0.0
+                it1 = QTableWidgetItem(str(k))
+                it1.setFlags(it1.flags() & ~Qt.ItemIsEditable)
+                it1.setBackground(QBrush(Qt.lightGray))
+                #it1.setBackground(QBrush(Qt.gray))
+                it2 = QTableWidgetItem(str(v))
+                if struct[k]['form'] == '百分比':
+                    it2 = QTableWidgetItem('%.2f%%' % (v*100))
+                else:
+                    it2 = QTableWidgetItem(str(v))
+                it2.setFlags(it2.flags() & ~Qt.ItemIsEditable)
+                row = struct[k]['row']
+                col = struct[k]['column']
+                tw.setItem(row, col, it1)
+                tw.setItem(row+1, col, it2)
+
 

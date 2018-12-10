@@ -10,6 +10,30 @@ class Business:
     def __init__(self):
         self.db = DB(db='wanbo')
         self._tables = {'测试':'test','收支明细':'balance','应收账款':'account','合同明细':'contract','开票明细':'invoice'}
+        self._stats = ['应收账款统计','开票统计','收支统计']
+        self._statsAccount = {
+            '今年合同额':{'row':0,'column':0,'form':None},
+            '历年合同额':{'row':0,'column':1,'form':None},
+            '合同总额':{'row':0,'column':2,'form':None},
+            '今年回款额':{'row':2,'column':0,'form':None},
+            '历年回款额':{'row':2,'column':1,'form':None},
+            '回款总额':{'row':2,'column':2,'form':None},
+            '今年未收款额':{'row':4,'column':0,'form':None},
+            '历年未收款额':{'row':4,'column':1,'form':None},
+            '未收款总额':{'row':4,'column':2,'form':None},
+            '正常欠款':{'row':4,'column':3,'form':None},
+            '异常欠款':{'row':4,'column':4,'form':None},
+            '到期欠款':{'row':4,'column':5,'form':None},
+            '今年坏账额':{'row':6,'column':0,'form':None},
+            '历年坏账额':{'row':6,'column':1,'form':None},
+            '坏账总额':{'row':6,'column':2,'form':None},
+            '今年提成额':{'row':8,'column':0,'form':None},
+            '历年提成额':{'row':8,'column':1,'form':None},
+            '提成总额':{'row':8,'column':2,'form':None},
+            '今年合同欠款率':{'row':10,'column':0,'form':'百分比'},
+            '历年合同欠款率':{'row':10,'column':1,'form':'百分比'},
+            '总欠款率':{'row':10,'column':2,'form':'百分比'}
+        }
 
     def __del__(self):
         if self.db != None:
@@ -18,6 +42,12 @@ class Business:
 
     def tables(self):
         return self._tables
+
+    def stats(self):
+        return self._stats
+
+    def statsAccount(self):
+        return self._statsAccount
 
     def selectTableHead(self, table):
         sql = 'select %s_en,%s_zh,%s_tp from head where %s_en is not null' % (table,table,table,table)
@@ -86,4 +116,27 @@ class Business:
         sql = sql % tuple(datas)
         self.db.exec(sql)
         GL.LOG.info(sql)
+
+    def getContractAmount(self, alias, condition=None):
+        if condition == None:
+            sql = 'select sum(amount) as %s from contract' % alias
+        else:
+            sql = 'select sum(amount) as %s from contract where %s' % (alias,condition)
+        return self.db.query(sql)
+
+    def getAccountStats(self):
+        mp = {}
+        sql = 'select sum(amount)as"合同总额",sum(paid)as"回款总额",sum(unpaid)as"未收款总额",sum(debt)as"坏账总额",sum(commission)as"提成总额" from account'
+        mp.update(self.db.query(sql)[0])
+        sql = 'select sum(amount)as"今年合同额",sum(paid)as"今年回款额",sum(unpaid)as"今年未收款额",sum(debt)as"今年坏账额",sum(commission)as"今年提成额" from account where year(date)=year(now())'
+        mp.update(self.db.query(sql)[0])
+        sql = 'select sum(amount)as"历年合同额",sum(paid)as"历年回款额",sum(unpaid)as"历年未收款额",sum(debt)as"历年坏账额",sum(commission)as"历年提成额" from account where year(date)<year(now())'
+        mp.update(self.db.query(sql)[0])
+        sql = 'select sum(unpaid)as"正常欠款" from account where status="正常欠款"'
+        mp.update(self.db.query(sql)[0])
+        sql = 'select sum(unpaid)as"异常欠款" from account where status="异常欠款"'
+        mp.update(self.db.query(sql)[0])
+        sql = 'select sum(unpaid)as"到期欠款" from account where status="到期欠款"'
+        mp.update(self.db.query(sql)[0])
+        return mp
 

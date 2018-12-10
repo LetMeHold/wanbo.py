@@ -72,7 +72,7 @@ def ReadAccountData():
         n = n + 1
         if n <= 3:
             continue
-        if n == 20:
+        if n == 40:
             break
         if len(row) < 18:
             return
@@ -170,21 +170,21 @@ def ReadInvoiceData():
 fn = '../../db/wanbo/2018财务汇总表（46周）.xlsx'
 wb = load_workbook(fn, read_only=True, data_only=True)
 for ws in wb:
-    if ws.title == '开票明细表':
-        ReadInvoiceData()
-    elif ws.title == '合同明细':
-        ReadContractData()
-    elif ws.title == '应收账款汇总表':
+    #if ws.title == '开票明细表':
+        #ReadInvoiceData()
+    #elif ws.title == '合同明细':
+        #ReadContractData()
+    if ws.title == '应收账款汇总表':
         ReadAccountData()
-    elif ws.title == '银行明细账':
-        source = '建设银行（基本户）'
-        ReadBalanceData(source)
-    elif ws.title == '现金账户1明细账':
-        source = '平安银行（姚洋）'
-        ReadBalanceData(source)
-    elif ws.title == '现金账户2明细账':
-        source = '平安银行（李昱平）'
-        ReadBalanceData(source)
+    #elif ws.title == '银行明细账':
+        #source = '建设银行（基本户）'
+        #ReadBalanceData(source)
+    #elif ws.title == '现金账户1明细账':
+        #source = '平安银行（姚洋）'
+        #ReadBalanceData(source)
+    #elif ws.title == '现金账户2明细账':
+        #source = '平安银行（李昱平）'
+        #ReadBalanceData(source)
     else:
         pass
 del db
