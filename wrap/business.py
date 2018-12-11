@@ -35,6 +35,7 @@ class Business:
             '总欠款率':{'row':10,'column':2,'form':'百分比'}
         }
         self._statsInvoice = ['月份','未税金额','税额','合计']
+        self._statsBalance = ['主营业务收入','其他业务收入','营业外收入','支出','余额']
 
     def __del__(self):
         if self.db != None:
@@ -52,6 +53,9 @@ class Business:
 
     def statsInvoice(self):
         return self._statsInvoice
+
+    def statsBalance(self):
+        return self._statsBalance
 
     def selectTableHead(self, table):
         sql = 'select %s_en,%s_zh,%s_tp from head where %s_en is not null' % (table,table,table,table)
@@ -134,6 +138,45 @@ class Business:
         for i in range(0,len(ret)):
             ret[i]['合计'] = ret[i]['未税金额'] + ret[i]['税额']
         return ret
+
+    def getBalanceStats(self):
+        mp = {}
+        sql = 'select source from balance group by source'
+        sources = self.db.query(sql)
+        for src in sources:
+            src = src['source']
+            mp[src] = {}
+            alias = '主营业务收入'
+            sql = 'select sum(income)as"%s" from balance where credence="%s" and source="%s"' % (alias,alias,src)
+            tmp = self.db.query(sql)
+            if tmp[0][alias] == None:
+                tmp[0][alias] = 0.0
+            mp[src][alias] = tmp[0][alias]
+            alias = '其他业务收入'
+            sql = 'select sum(income)as"%s" from balance where credence="%s" and source="%s"' % (alias,alias,src)
+            tmp = self.db.query(sql)
+            if tmp[0][alias] == None:
+                tmp[0][alias] = 0.0
+            mp[src][alias] = tmp[0][alias]
+            alias = '营业外收入'
+            sql = 'select sum(income)as"%s" from balance where credence="%s" and source="%s"' % (alias,alias,src)
+            tmp = self.db.query(sql)
+            if tmp[0][alias] == None:
+                tmp[0][alias] = 0.0
+            mp[src][alias] = tmp[0][alias]
+            alias = '支出'
+            sql = 'select sum(pay)as"%s" from balance where source="%s"' % (alias,src)
+            tmp = self.db.query(sql)
+            if tmp[0][alias] == None:
+                tmp[0][alias] = 0.0
+            mp[src][alias] = tmp[0][alias]
+            alias = '余额'
+            sql = 'select sum(balance)as"%s" from balance where source="%s"' % (alias,src)
+            tmp = self.db.query(sql)
+            if tmp[0][alias] == None:
+                tmp[0][alias] = 0.0
+            mp[src][alias] = tmp[0][alias]
+        return mp
 
     def getAccountStats(self):
         mp = {}

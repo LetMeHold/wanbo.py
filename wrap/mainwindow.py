@@ -27,7 +27,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #GL.LOG.info(sql)
         #ret = self.bus.getContractAmount('year(date) = 2018')
         #ret = self.bus.getContractAmount('合同总额')
-        ret = self.bus.getInvoiceStats()
+        ret = self.bus.getBalanceStats()
         print(ret)
         pass
 
@@ -418,6 +418,33 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             tw.setRowCount(len(ret))
             tw.setHorizontalHeaderLabels(heads)
             row = 0
+            for tmp in ret:
+                for k,v in tmp.items():
+                    if v == None:
+                        v = 0.0
+                    col = heads.index(k)
+                    it = QTableWidgetItem(str(v))
+                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                    tw.setItem(row, col, it)
+                it = QTableWidgetItem(str(v))
+                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                tw.setItem(row, col, it)
+                row += 1
+        elif itemNew.text(0) == '收支统计':
+            tw = self.twStats
+            tw.clear()
+            heads = self.bus.statsBalance()
+            ret = self.bus.getBalanceStats()
+            tw.setColumnCount(len(heads))
+            tw.setRowCount(len(ret))
+            tw.setHorizontalHeaderLabels(heads)
+            print(ret)
+            return
+            row = 0
+            for k1,v1 in ret.items():
+                for k2,v2 in v1.items():
+
+
             for tmp in ret:
                 for k,v in tmp.items():
                     if v == None:
