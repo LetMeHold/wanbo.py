@@ -438,24 +438,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             tw.setColumnCount(len(heads))
             tw.setRowCount(len(ret))
             tw.setHorizontalHeaderLabels(heads)
-            print(ret)
-            return
             row = 0
             for k1,v1 in ret.items():
-                for k2,v2 in v1.items():
-
-
-            for tmp in ret:
-                for k,v in tmp.items():
-                    if v == None:
-                        v = 0.0
-                    col = heads.index(k)
-                    it = QTableWidgetItem(str(v))
-                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                    tw.setItem(row, col, it)
-                it = QTableWidgetItem(str(v))
+                it = QTableWidgetItem(str(k1))
                 it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                col = 0
                 tw.setItem(row, col, it)
+                for k2,v2 in v1.items():
+                    it = QTableWidgetItem(str(v2))
+                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                    col = heads.index(k2) + 1
+                    tw.setItem(row, col, it)
                 row += 1
 
 
