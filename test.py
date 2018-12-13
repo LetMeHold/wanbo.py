@@ -43,13 +43,13 @@ def ReadBalanceData(source):
         n = n + 1
         if n <= 3:
             continue
-        if n == 10:
+        if n == 500:
             break
-        if len(row) < 12:
-            return
+        if len(row) < 18:
+            continue
         mp['class1'] = row[0].value
         if mp['class1']==None or mp['class1'].strip()=='':
-            return
+            continue
         mp['class2'] = row[1].value
         year = row[2].value
         month = row[3].value
@@ -75,7 +75,7 @@ def ReadAccountData():
         if n == 40:
             break
         if len(row) < 18:
-            return
+            continue
         mp['no'] = row[0].value
         year = row[1].value
         if isinstance(mp['no'],int)==False or isinstance(year,int)==False:
@@ -113,7 +113,7 @@ def ReadContractData():
         if n == 10:
             break
         if len(row) < 18:
-            return
+            continue
         mp['contract'] = row[1].value
         mp['date'] = row[2].value
         mp['seller'] = row[3].value
@@ -145,7 +145,7 @@ def ReadInvoiceData():
         if n == 100:
             break
         if len(row) < 16:
-            return
+            continue
         mp['contract'] = row[0].value
         year = row[1].value
         month = row[2].value
@@ -170,15 +170,15 @@ def ReadInvoiceData():
 fn = '../../db/wanbo/2018财务汇总表（46周）.xlsx'
 wb = load_workbook(fn, read_only=True, data_only=True)
 for ws in wb:
-    if ws.title == '开票明细表':
-        ReadInvoiceData()
+    #if ws.title == '开票明细表':
+        #ReadInvoiceData()
     #elif ws.title == '合同明细':
         #ReadContractData()
     #if ws.title == '应收账款汇总表':
         #ReadAccountData()
-    #elif ws.title == '银行明细账':
-        #source = '建设银行（基本户）'
-        #ReadBalanceData(source)
+    if ws.title == '银行明细账':
+        source = '建设银行（基本户）'
+        ReadBalanceData(source)
     #elif ws.title == '现金账户1明细账':
         #source = '平安银行（姚洋）'
         #ReadBalanceData(source)

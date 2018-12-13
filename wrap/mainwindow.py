@@ -450,5 +450,42 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     col = heads.index(k2) + 1
                     tw.setItem(row, col, it)
                 row += 1
+        elif itemNew.text(0) == '费用统计':
+            tw = self.twStats
+            tw.clear()
+            heads = self.bus.statsCost()
+            ret = self.bus.getCostStats()
+            tw.setColumnCount(len(heads))
+            tw.setRowCount(100)
+            tw.setHorizontalHeaderLabels(heads)
+            row = 0
+            for class1,v1 in ret.items():
+                it = QTableWidgetItem(str(class1))
+                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                col = 0
+                tw.setItem(row, col, it)
+                row += 1
+                for class2,v2 in v1.items():
+                    GL.LOG.info(row)
+                    #if row >= 1:
+                        #GL.LOG.info('ret')
+                        #return
+                    it = QTableWidgetItem(str(class2))
+                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                    col = 1
+                    tw.setItem(row, col, it)
+                    for v3 in v2:
+                        mon = v3['月份']
+                        cost = v3['费用']
+                        if cost == None:
+                            cost = 0.0
+                        it = QTableWidgetItem(str(cost))
+                        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                        col = heads.index(mon)
+                        tw.setItem(row, col, it)
+                    row += 1
+                    GL.LOG.info(row)
+        else:
+            pass
 
 

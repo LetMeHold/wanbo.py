@@ -10,7 +10,7 @@ class Business:
     def __init__(self):
         self.db = DB(db='wanbo')
         self._tables = {'测试':'test','收支明细':'balance','应收账款':'account','合同明细':'contract','开票明细':'invoice'}
-        self._stats = ['应收账款统计','开票统计','收支统计']
+        self._stats = ['应收账款统计','开票统计','收支统计','费用统计']
         self._statsAccount = {
             '今年合同额':{'row':0,'column':0,'form':None},
             '历年合同额':{'row':0,'column':1,'form':None},
@@ -36,6 +36,7 @@ class Business:
         }
         self._statsInvoice = ['月份','未税金额','税额','合计']
         self._statsBalance = ['主营业务收入','其他业务收入','营业外收入','支出','余额']
+        self._statsCost = ['一级类目','二级类目']
 
     def __del__(self):
         if self.db != None:
@@ -56,6 +57,13 @@ class Business:
 
     def statsBalance(self):
         return self._statsBalance
+
+    def statsCost(self):
+        sql = 'select date_format(date,"%Y-%m")as"月份" from balance where year(date)=year(now()) group by date_format(date,"%Y-%m")'
+        tmp = self.db.query(sql)
+        for t in tmp:
+            self._statsCost.append(t['月份'])
+        return self._statsCost
 
     def selectTableHead(self, table):
         sql = 'select %s_en,%s_zh,%s_tp from head where %s_en is not null' % (table,table,table,table)
@@ -177,6 +185,39 @@ class Business:
                 tmp[0][alias] = 0.0
             mp[src][alias] = tmp[0][alias]
         return mp
+
+    def getCostStats(self):
+        mp = {}
+        sql = 'select sum(pay)as"费用",date_format(date,"%Y-%m")as"月份" from balance where year(date)=year(now()) group by date_format(date,"%Y-%m")'
+        tmp = self.db.query(sql)
+        mp['总费用汇总'] = {}
+        mp['总费用汇总']['总费用汇总'] = tmp
+        sql = 'select class1 from balance where year(date)=year(now()) group by class1'
+        #sql = 'select sum(pay)as"费用",class1,date_format(date,"%Y-%m")as"月份" from balance group by class1,date_format(date,"%Y-%m")'
+        tmp1 = self.db.query(sql)
+        for t1 in tmp1:
+            class1 = t1['class1']
+            mp[class1] = {}
+            sql = 'select date_format(date,"%Y-%m")as"月份",sum(pay)as"费用" from balance where year(date)=year(now()) and class1="%s" group by date_format(date,"%Y-%m")' % class1
+            tmp2 = self.db.query(sql)
+            GL.LOG.info(tmp2)
+            mp[class1]['费用'] = []
+            for t2 in tmp2:
+                mp[class1]['费用'].append(t2)
+            #下次从这里开始写
+            sql = 'select class2 from balance where year(date)=year(now()) and class1="%s" group by class2' % class1
+            tmp3 = self.db.query(sql)
+            for t3 in tmp3:
+                class2 = t3['class2']
+                mp[class1][class2] = []
+                sql = 'select date_format(date,"%Y-%m")as"月份",sum(pay)as"费用" from balance where year(date)=year(now()) and class1="' + class1 + '" and class2="' + class2 + '" group by date_format(date,"%Y-%m")'
+                tmp4 = self.db.query(sql)
+                for t4 in tmp4:
+                    mp[class1][class2].append(t4)
+        GL.LOG.info(mp)
+        return mp
+        #sql = 'select count(pay) from balance group by source'
+        #pass
 
     def getAccountStats(self):
         mp = {}
