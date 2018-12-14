@@ -107,7 +107,6 @@ class Business:
         self.db.exec(sql)
 
     def insertTable(self, tableZh, itemData):
-        GL.LOG.info(itemData)
         table = self.tables()[tableZh]
         head = self.selectTableHead(table)
         sql = self.getInsertTemplates(table, head[0])
@@ -127,11 +126,8 @@ class Business:
             else:
                 sql = sql.replace('%TBD','"%s"', 1)
             datas.append(txt)
-        GL.LOG.info(sql)
-        GL.LOG.info(datas)
         sql = sql % tuple(datas)
         self.db.exec(sql)
-        GL.LOG.info(sql)
 
     def getContractAmount(self, alias, condition=None):
         if condition == None:
@@ -188,36 +184,40 @@ class Business:
 
     def getCostStats(self):
         mp = {}
+        #总费用
         sql = 'select sum(pay)as"费用",date_format(date,"%Y-%m")as"月份" from balance where year(date)=year(now()) group by date_format(date,"%Y-%m")'
         tmp = self.db.query(sql)
         mp['总费用汇总'] = {}
-        mp['总费用汇总']['总费用汇总'] = tmp
+        mp['总费用汇总']['费用'] = tmp
+        count = 1   #统计一级类目和二级类目的总数
+        #一级类目
         sql = 'select class1 from balance where year(date)=year(now()) group by class1'
-        #sql = 'select sum(pay)as"费用",class1,date_format(date,"%Y-%m")as"月份" from balance group by class1,date_format(date,"%Y-%m")'
         tmp1 = self.db.query(sql)
         for t1 in tmp1:
+            count += 1
             class1 = t1['class1']
             mp[class1] = {}
-            sql = 'select date_format(date,"%Y-%m")as"月份",sum(pay)as"费用" from balance where year(date)=year(now()) and class1="%s" group by date_format(date,"%Y-%m")' % class1
+            #一级类目的费用
+            sql = 'select date_format(date,"%%Y-%%m")as"月份",sum(pay)as"费用" from balance where year(date)=year(now()) and class1="%s" group by date_format(date,"%%Y-%%m")' % class1
             tmp2 = self.db.query(sql)
-            GL.LOG.info(tmp2)
             mp[class1]['费用'] = []
             for t2 in tmp2:
                 mp[class1]['费用'].append(t2)
-            #下次从这里开始写
+            mp[class1]['二级类目'] = {}
+            #一级类目下的二级类目
             sql = 'select class2 from balance where year(date)=year(now()) and class1="%s" group by class2' % class1
             tmp3 = self.db.query(sql)
             for t3 in tmp3:
+                count += 1
                 class2 = t3['class2']
-                mp[class1][class2] = []
-                sql = 'select date_format(date,"%Y-%m")as"月份",sum(pay)as"费用" from balance where year(date)=year(now()) and class1="' + class1 + '" and class2="' + class2 + '" group by date_format(date,"%Y-%m")'
+                mp[class1]['二级类目'][class2] = []
+                #二级类目的费用
+                sql = 'select date_format(date,"%%Y-%%m")as"月份",sum(pay)as"费用" from balance where year(date)=year(now()) and class1="%s" and class2="%s" group by date_format(date,"%%Y-%%m")'\
+                        % (class1,class2)
                 tmp4 = self.db.query(sql)
                 for t4 in tmp4:
-                    mp[class1][class2].append(t4)
-        GL.LOG.info(mp)
-        return mp
-        #sql = 'select count(pay) from balance group by source'
-        #pass
+                    mp[class1]['二级类目'][class2].append(t4)
+        return (mp,count)
 
     def getAccountStats(self):
         mp = {}
@@ -233,5 +233,8 @@ class Business:
         mp.update(self.db.query(sql)[0])
         sql = 'select sum(unpaid)as"到期欠款" from account where status="到期欠款"'
         mp.update(self.db.query(sql)[0])
+        for k,v in mp.items():
+            if v == None:
+                mp[k] = 0.0
         return mp
 

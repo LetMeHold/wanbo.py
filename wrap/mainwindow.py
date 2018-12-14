@@ -21,14 +21,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         GL.LOG.info('主程序关闭')
 
     def actQryTestClicked(self):
-        #self.statusbar.showMessage('hhh', 5000)
-        #QMessageBox.critical(self, '失败', '大大的失败')
-        #sql = self.bus.getInsertTemplates(self.tableQuery, self.tableQueryHead[0])
-        #GL.LOG.info(sql)
-        #ret = self.bus.getContractAmount('year(date) = 2018')
-        #ret = self.bus.getContractAmount('合同总额')
-        ret = self.bus.getBalanceStats()
-        print(ret)
         pass
 
 
@@ -256,7 +248,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tp = self.tableDstHead[2][c]
         old = self.itemDst.text()
         self.itemDst.setText(self.txtDst)
-        GL.LOG.info(self.tableJob)
         GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableDst,id_value,zhHead,old,self.txtDst))
         self.bus.updateTableById(self.tableDst, enHead, tp, self.txtDst, id_enHead, id_value)
         self.twDst.setCurrentItem(self.itemDst)
@@ -388,9 +379,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             tw.setColumnCount(7)
             tw.setRowCount(13)
             ret = self.bus.getAccountStats()
-            ret['今年合同欠款率'] = ret['今年未收款额'] / ret['今年合同额']
-            ret['历年合同欠款率'] = ret['历年未收款额'] / ret['历年合同额']
-            ret['总欠款率'] = ret['未收款总额'] / ret['合同总额']
+            if ret['今年合同额'] != 0.0:
+                ret['今年合同欠款率'] = ret['今年未收款额'] / ret['今年合同额']
+            else:
+                ret['今年合同欠款率'] = 0.0
+            if ret['历年合同额'] != 0.0:
+                ret['历年合同欠款率'] = ret['历年未收款额'] / ret['历年合同额']
+            else:
+                ret['历年合同欠款率'] = 0.0
+            if ret['合同总额'] != 0.0:
+                ret['总欠款率'] = ret['未收款总额'] / ret['合同总额']
+            else:
+                ret['总欠款率'] = 0.0
             struct = self.bus.statsAccount()
             for k,v in ret.items():
                 if k not in struct:
@@ -454,37 +454,83 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             tw = self.twStats
             tw.clear()
             heads = self.bus.statsCost()
-            ret = self.bus.getCostStats()
+            (ret,count) = self.bus.getCostStats()
             tw.setColumnCount(len(heads))
-            tw.setRowCount(100)
+            tw.setRowCount(count)
             tw.setHorizontalHeaderLabels(heads)
+            #总费用
             row = 0
+            col = 0
+            it = QTableWidgetItem('总费用汇总')
+            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+            it.setBackground(QBrush(Qt.lightGray))
+            tw.setItem(row, col, it)
+            for p in ret['总费用汇总']['费用']:
+                mon = p['月份']
+                cost = p['费用']
+                if cost == None:
+                    cost = 0.0
+                it = QTableWidgetItem(str(cost))
+                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                it.setBackground(QBrush(Qt.lightGray))
+                col = heads.index(mon)
+                tw.setItem(row, col, it)
+            #一级和二级类目
+            row = 1
             for class1,v1 in ret.items():
+                if class1 == '总费用汇总':
+                    continue
+                #一级类目
                 it = QTableWidgetItem(str(class1))
                 it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                it.setBackground(QBrush(Qt.lightGray))
                 col = 0
                 tw.setItem(row, col, it)
-                row += 1
-                for class2,v2 in v1.items():
-                    GL.LOG.info(row)
-                    #if row >= 1:
-                        #GL.LOG.info('ret')
-                        #return
-                    it = QTableWidgetItem(str(class2))
-                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                    col = 1
-                    tw.setItem(row, col, it)
-                    for v3 in v2:
-                        mon = v3['月份']
-                        cost = v3['费用']
+                #一级类目的费用
+                if '费用' in v1:
+                    for p1 in v1['费用']:
+                        mon = p1['月份']
+                        cost = p1['费用']
                         if cost == None:
                             cost = 0.0
                         it = QTableWidgetItem(str(cost))
                         it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                        it.setBackground(QBrush(Qt.lightGray))
                         col = heads.index(mon)
                         tw.setItem(row, col, it)
-                    row += 1
-                    GL.LOG.info(row)
+                #二级类目
+                if '二级类目' in v1:
+                    for class2,v2 in v1['二级类目'].items():
+                        it = QTableWidgetItem(str(class2))
+                        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                        row += 1
+                        col = 1
+                        tw.setItem(row, col, it)
+                        #二级类目的费用
+                        for p2 in v2:
+                            mon = p2['月份']
+                            cost = p2['费用']
+                            if cost == None:
+                                cost = 0.0
+                            it = QTableWidgetItem(str(cost))
+                            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                            col = heads.index(mon)
+                            tw.setItem(row, col, it)
+                row += 1
+            #处理空表格
+            for r in range(0, tw.rowCount()):
+                for c in range(0, tw.columnCount()):
+                    it = tw.item(r, c)
+                    it_0 = tw.item(r, 0)
+                    if it == None:
+                        if c==0 or c==1:
+                            it = QTableWidgetItem('')
+                        else:
+                            it = QTableWidgetItem(str(0.0))
+                        if it_0!=None and it_0.text()!='':
+                            it.setBackground(QBrush(Qt.lightGray))
+                        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                        tw.setItem(r, c, it)
         else:
             pass
 

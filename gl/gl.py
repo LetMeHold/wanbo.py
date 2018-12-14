@@ -3,6 +3,7 @@
 import sys
 import time
 import traceback
+import json
 
 import sys
 import io
@@ -19,5 +20,8 @@ class Global:
     def setErr(self, err):
         self.ERR = err
         self.LOG.error(err)
+
+    def dumpJson(self, pyObj):
+        return json.dumps(pyObj, ensure_ascii=False, sort_keys=True, indent=4)
 
 GL = Global()
