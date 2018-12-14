@@ -4,6 +4,7 @@ from gl import *
 from wrap.base import *
 from openpyxl import Workbook
 from openpyxl import load_workbook
+import datetime
 
 class Business:
 
@@ -37,6 +38,12 @@ class Business:
         self._statsInvoice = ['月份','未税金额','税额','合计']
         self._statsBalance = ['主营业务收入','其他业务收入','营业外收入','支出','余额']
         self._statsCost = ['一级类目','二级类目']
+
+    def loadExcel(self, fn):
+        #self.fn = '../../db/wanbo/2018财务汇总表（46周）.xlsx'
+        self.fn = fn
+        self.wb = load_workbook(fn, read_only=True, data_only=True)
+        return self.wb
 
     def __del__(self):
         if self.db != None:
@@ -237,4 +244,170 @@ class Business:
             if v == None:
                 mp[k] = 0.0
         return mp
+
+    def TestDB(self):
+        sql = 'select * from test'
+        print(self.db.query(sql))
+    
+    def insertToTable(self, mp, table):
+        keys_sql = '('
+        values_sql = '('
+        for k,v in mp.items():
+            keys_sql += '%s,' % k
+            if v==None or v=='-' or v=='/':
+                values_sql += 'NULL,'
+            elif isinstance(v, str):
+                if v.strip() == '':
+                    values_sql += 'NULL,'
+                else:
+                    values_sql += '"%s",' % v
+            elif isinstance(v, datetime.datetime):
+                values_sql += '"%s",' % v.strftime('%Y-%m-%d')
+            else:
+                values_sql += '%s,' % v
+        keys_sql = keys_sql.rstrip(',')
+        values_sql = values_sql.rstrip(',')
+        keys_sql += ')'
+        values_sql += ')'
+        sql = 'insert into %s %s values%s' % (table,keys_sql,values_sql)
+        self.db.exec(sql)
+    
+    def ReadBalanceData(self, ws, source):
+        n = 0
+        mp = {}
+        self.db.resetCount()
+        for row in ws.rows:
+            n = n + 1
+            if n <= 3:
+                continue
+            if n == 10:
+                break
+            if len(row) < 10:
+                continue
+            mp['class1'] = row[0].value
+            if mp['class1']==None or mp['class1'].strip()=='':
+                continue
+            mp['class2'] = row[1].value
+            year = row[2].value
+            month = row[3].value
+            day = row[4].value
+            mp['date'] = '%d-%d-%d' % (year,month,day)
+            mp['abstract'] = row[5].value
+            mp['income'] = row[6].value
+            mp['pay'] = row[7].value
+            mp['balance'] = row[8].value
+            mp['type'] = row[9].value
+            mp['credence'] = row[10].value
+            mp['remark'] = row[11].value
+            mp['source'] = source
+            self.insertToTable(mp, 'balance')
+        return self.db.getCount()
+    
+    def ReadAccountData(self, ws):
+        n = 0
+        mp = {}
+        self.db.resetCount()
+        for row in ws.rows:
+            n = n + 1
+            if n <= 3:
+                continue
+            if n == 40:
+                break
+            if len(row) < 18:
+                continue
+            mp['no'] = row[0].value
+            year = row[1].value
+            if isinstance(mp['no'],int)==False or isinstance(year,int)==False:
+                continue
+            del mp['no']
+            month = row[2].value
+            day = row[3].value
+            mp['date'] = '%d-%d-%d' % (year,month,day)
+            mp['seller'] = row[4].value
+            mp['contract'] = row[5].value
+            mp['client'] = row[6].value
+            mp['amount'] = row[7].value
+            mp['paid'] = row[8].value
+            mp['unpaid'] = row[9].value
+            mp['debt'] = row[10].value
+            mp['percent'] = row[11].value
+            mp['invoice_commission'] = row[12].value
+            mp['invoice_type'] = row[13].value
+            mp['invoice_paid'] = row[14].value
+            mp['invoice_unpaid'] = row[15].value
+            mp['status'] = row[16].value
+            mp['unpaid_reason'] = row[17].value
+            mp['commission'] = row[18].value
+            mp['commission_date'] = row[19].value
+            mp['remark'] = row[20].value
+            self.insertToTable(mp, 'account')
+        return self.db.getCount()
+    
+    def ReadContractData(self, ws):
+        n = 0
+        mp = {}
+        self.db.resetCount()
+        for row in ws.rows:
+            n = n + 1
+            if n <= 4:
+                continue
+            if n == 10:
+                break
+            if len(row) < 18:
+                continue
+            mp['contract'] = row[1].value
+            mp['date'] = row[2].value
+            mp['seller'] = row[3].value
+            mp['client'] = row[4].value
+            mp['product'] = row[5].value
+            mp['model'] = row[6].value
+            mp['unit'] = row[7].value
+            mp['quantity'] = row[8].value
+            mp['price'] = row[9].value
+            mp['count'] = row[10].value
+            mp['amount'] = row[11].value
+            mp['tax_rate'] = row[12].value
+            mp['date_plan'] = row[13].value
+            mp['date_actual'] = row[14].value
+            mp['ontime'] = row[15].value
+            mp['ontime_whynot'] = row[16].value
+            mp['project'] = row[17].value
+            mp['province'] = row[18].value
+            mp['remark'] = row[19].value
+            self.insertToTable(mp, 'contract')
+        return self.db.getCount()
+    
+    def ReadInvoiceData(self, ws):
+        n = 0
+        mp = {}
+        self.db.resetCount()
+        for row in ws.rows:
+            n = n + 1
+            if n <= 2:
+                continue
+            if n == 100:
+                break
+            if len(row) < 16:
+                continue
+            mp['contract'] = row[0].value
+            year = row[1].value
+            month = row[2].value
+            day = row[3].value
+            mp['date'] = '%d-%d-%d' % (year,month,day)
+            mp['invoice_no'] = row[4].value
+            mp['invoice_client'] = row[5].value
+            mp['invoice_content'] = row[6].value
+            mp['model'] = row[7].value
+            mp['quantity'] = row[8].value
+            mp['price'] = row[9].value
+            mp['price_notax'] = row[10].value
+            mp['tax'] = row[11].value
+            mp['amount'] = row[12].value
+            mp['invoice_amount'] = row[13].value
+            mp['invoice_type'] = row[14].value
+            mp['status'] = row[15].value
+            mp['refund'] = row[16].value
+            mp['remark'] = row[17].value
+            self.insertToTable(mp, 'invoice')
+        return self.db.getCount()
 

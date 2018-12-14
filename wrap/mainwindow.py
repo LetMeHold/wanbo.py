@@ -1,7 +1,7 @@
 from gl import *
 from ui import *
 from wrap.business import Business
-from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem
+from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem,QFileDialog
 from PyQt5.QtCore import QDate,Qt
 from PyQt5.QtGui import QIcon,QCursor,QBrush
 
@@ -102,8 +102,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnJobClose.clicked.connect(self.btnJobCloseClicked)
         self.edtFilter.textChanged.connect(self.edtFilterChanged)
         self.edtFilterJob.textChanged.connect(self.edtFilterJobChanged)
+        self.btnBrowse.clicked.connect(self.btnBrowseClicked)
+        self.btnImport.clicked.connect(self.btnImportClicked)
 
         #更多需要初始化的内容
+        self.edtFile.setFocusPolicy(Qt.NoFocus)
+        self.txtLoadMsg.setFocusPolicy(Qt.NoFocus)
         self.jobTabIndex = 2
         self.tab.removeTab(self.jobTabIndex)   #默认隐藏job标签页
         self.tableQuery = None
@@ -119,6 +123,37 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twDstHead = None
         self.itemDst = None
         self.txtDst = None
+
+    def btnBrowseClicked(self):
+        fn,ft = QFileDialog.getOpenFileName(self, '选择导入文件', 'c:/', 'Excel Files (*.xlsx *.xls)')
+        self.edtFile.setText(fn)
+
+    def btnImportClicked(self):
+        wb = self.bus.loadExcel(self.edtFile.text())
+        for ws in wb:
+            if ws.title=='现金账户1明细账' and self.cb1.isChecked():
+                source = '平安银行（姚洋）'
+                (r1,r2) = self.bus.ReadBalanceData(ws, source)
+                self.txtLoadMsg.append('平安银行（姚洋），导入：成功 %d, 失败 %d' % (r1,r2))
+            elif ws.title=='现金账户2明细账' and self.cb2.isChecked():
+                source = '平安银行（李昱平）'
+                (r1,r2) = self.bus.ReadBalanceData(ws, source)
+                self.txtLoadMsg.append('平安银行（李昱平），导入：成功 %d, 失败 %d' % (r1,r2))
+            elif ws.title=='银行明细账' and self.cb3.isChecked():
+                source = '建设银行（基本户）'
+                (r1,r2) = self.bus.ReadBalanceData(ws, source)
+                self.txtLoadMsg.append('建设银行（基本户），导入：成功 %d, 失败 %d' % (r1,r2))
+            elif ws.title=='应收账款汇总表' and self.cb4.isChecked():
+                (r1,r2) = self.bus.ReadAccountData(ws)
+                self.txtLoadMsg.append('应收账款，导入：成功 %d, 失败 %d' % (r1,r2))
+            elif ws.title=='合同明细' and self.cb5.isChecked():
+                (r1,r2) = self.bus.ReadContractData(ws)
+                self.txtLoadMsg.append('合同明细，导入：成功 %d, 失败 %d' % (r1,r2))
+            elif ws.title=='开票明细表' and self.cb6.isChecked():
+                (r1,r2) = self.bus.ReadInvoiceData(ws)
+                self.txtLoadMsg.append('开票明细，导入：成功 %d, 失败 %d' % (r1,r2))
+            else:
+                pass
 
     def treeQueryItemActivated(self, itemNew, itemOld):
         self.fillTableQuery(itemNew.text(0))
