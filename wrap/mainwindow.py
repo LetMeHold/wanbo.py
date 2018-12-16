@@ -108,7 +108,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         #更多需要初始化的内容
         self.edtFile.setFocusPolicy(Qt.NoFocus)
-        #self.txtLoadMsg.setFocusPolicy(Qt.NoFocus)
+        self.txtLoadMsg.setFocusPolicy(Qt.NoFocus)
         self.jobTabIndex = 3
         self.tab.removeTab(self.jobTabIndex)   #默认隐藏job标签页
         self.tableQuery = None

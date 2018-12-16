@@ -102,7 +102,7 @@ class Ui_MainWindow(object):
         self.tabLoad = QtWidgets.QWidget()
         self.tabLoad.setObjectName("tabLoad")
         self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.tabLoad)
-        self.verticalLayout_6.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_6.setContentsMargins(16, 16, 16, 16)
         self.verticalLayout_6.setObjectName("verticalLayout_6")
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
