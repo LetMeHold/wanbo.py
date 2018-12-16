@@ -478,17 +478,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             tw.setRowCount(len(ret))
             tw.setHorizontalHeaderLabels(heads)
             row = 0
-            for k1,v1 in ret.items():
-                it = QTableWidgetItem(str(k1))
-                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                col = 0
-                tw.setItem(row, col, it)
-                for k2,v2 in v1.items():
-                    it = QTableWidgetItem(str(v2))
+            for l in ret:
+                for k1,v1 in l.items():
+                    it = QTableWidgetItem(str(k1))
                     it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                    col = heads.index(k2) + 1
+                    col = 0
                     tw.setItem(row, col, it)
-                row += 1
+                    for k2,v2 in v1.items():
+                        it = QTableWidgetItem(str(k2))
+                        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                        col = 1
+                        tw.setItem(row, col, it)
+                        for k3,v3 in v2.items():
+                            it = QTableWidgetItem(str(v3))
+                            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                            GL.LOG.info(k3)
+                            col = heads.index(k3)
+                            tw.setItem(row, col, it)
+                        row += 1
+                    row += 1
         elif itemNew.text(0) == '费用统计':
             tw = self.twStats
             tw.clear()

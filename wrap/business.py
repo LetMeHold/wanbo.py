@@ -36,7 +36,7 @@ class Business:
             '总欠款率':{'row':10,'column':2,'form':'百分比'}
         }
         self._statsInvoice = ['月份','未税金额','税额','含税金额']
-        self._statsBalance = ['主营业务收入','其他业务收入','营业外收入','支出','余额']
+        self._statsBalance = ['年份','来源','主营业务收入','其他业务收入','营业外收入','上年度余额转入','年度总收入','支出','结余']
         self._statsCost = ['一级类目','二级类目']
 
     def loadExcel(self, fn):
@@ -161,43 +161,64 @@ class Business:
         return ret
 
     def getBalanceStats(self):
-        mp = {}
+        ret = []
+        sql = 'select date_format(date,"%Y")as"year" from balance group by date_format(date,"%Y")'
+        years = self.db.query(sql)
         sql = 'select source from balance group by source'
         sources = self.db.query(sql)
-        for src in sources:
-            src = src['source']
-            mp[src] = {}
-            alias = '主营业务收入'
-            sql = 'select sum(income)as"%s" from balance where credence="%s" and source="%s"' % (alias,alias,src)
-            tmp = self.db.query(sql)
-            if tmp[0][alias] == None:
-                tmp[0][alias] = 0.0
-            mp[src][alias] = tmp[0][alias]
-            alias = '其他业务收入'
-            sql = 'select sum(income)as"%s" from balance where credence="%s" and source="%s"' % (alias,alias,src)
-            tmp = self.db.query(sql)
-            if tmp[0][alias] == None:
-                tmp[0][alias] = 0.0
-            mp[src][alias] = tmp[0][alias]
-            alias = '营业外收入'
-            sql = 'select sum(income)as"%s" from balance where credence="%s" and source="%s"' % (alias,alias,src)
-            tmp = self.db.query(sql)
-            if tmp[0][alias] == None:
-                tmp[0][alias] = 0.0
-            mp[src][alias] = tmp[0][alias]
-            alias = '支出'
-            sql = 'select sum(pay)as"%s" from balance where source="%s"' % (alias,src)
-            tmp = self.db.query(sql)
-            if tmp[0][alias] == None:
-                tmp[0][alias] = 0.0
-            mp[src][alias] = tmp[0][alias]
-            alias = '余额'
-            sql = 'select sum(balance)as"%s" from balance where source="%s"' % (alias,src)
-            tmp = self.db.query(sql)
-            if tmp[0][alias] == None:
-                tmp[0][alias] = 0.0
-            mp[src][alias] = tmp[0][alias]
-        return mp
+        for y in years:
+            year = y['year']
+            mp_year = {}
+            mp = {}
+            for src in sources:
+                src = src['source']
+                mp[src] = {}
+                alias = '主营业务收入'
+                sql = 'select sum(income)as"%s" from balance where date_format(date,"%%Y")="%s" and class2="%s" and source="%s"' % (alias,year,alias,src)
+                tmp = self.db.query(sql)
+                if tmp[0][alias] == None:
+                    tmp[0][alias] = 0.0
+                mp[src][alias] = tmp[0][alias]
+                alias = '其他业务收入'
+                sql = 'select sum(income)as"%s" from balance where date_format(date,"%%Y")="%s" and class2="%s" and source="%s"' % (alias,year,alias,src)
+                tmp = self.db.query(sql)
+                if tmp[0][alias] == None:
+                    tmp[0][alias] = 0.0
+                mp[src][alias] = tmp[0][alias]
+                alias = '营业外收入'
+                sql = 'select sum(income)as"%s" from balance where date_format(date,"%%Y")="%s" and class2="%s" and source="%s"' % (alias,year,alias,src)
+                tmp = self.db.query(sql)
+                if tmp[0][alias] == None:
+                    tmp[0][alias] = 0.0
+                mp[src][alias] = tmp[0][alias]
+                alias = '上年度余额转入'
+                sql = 'select sum(income)as"%s" from balance where date_format(date,"%%Y")="%s" and class2="%s" and source="%s"' % (alias,year,'余额转入',src)
+                tmp = self.db.query(sql)
+                if tmp[0][alias] == None:
+                    tmp[0][alias] = 0.0
+                mp[src][alias] = tmp[0][alias]
+                alias = '年度总收入'
+                sql = 'select sum(income)as"%s" from balance where date_format(date,"%%Y")="%s" and source="%s"' % (alias,year,src)
+                tmp = self.db.query(sql)
+                if tmp[0][alias] == None:
+                    tmp[0][alias] = 0.0
+                mp[src][alias] = round(tmp[0][alias]-mp[src]['上年度余额转入'], 2)
+                alias = '支出'
+                sql = 'select sum(pay)as"%s" from balance where date_format(date,"%%Y")="%s" and source="%s"' % (alias,year,src)
+                tmp = self.db.query(sql)
+                if tmp[0][alias] == None:
+                    tmp[0][alias] = 0.0
+                mp[src][alias] = tmp[0][alias]
+                alias = '结余'
+                sql = 'select sum(income)-sum(pay)as"%s" from balance where date_format(date,"%%Y")="%s" and source="%s"' % (alias,year,src)
+                tmp = self.db.query(sql)
+                if tmp[0][alias] == None:
+                    tmp[0][alias] = 0.0
+                mp[src][alias] = tmp[0][alias]
+            mp_year[year] = mp
+            ret.append(mp_year)
+            GL.LOG.info(GL.dumpJson(ret))
+        return ret
 
     def getCostStats(self):
         mp = {}
@@ -290,8 +311,8 @@ class Business:
             n = n + 1
             if n <= 3:
                 continue
-            if n == 10:
-                break
+            #if n == 10:
+                #break
             if len(row) < 10:
                 continue
             mp['class1'] = row[0].value
