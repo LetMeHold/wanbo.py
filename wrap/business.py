@@ -162,15 +162,18 @@ class Business:
 
     def getBalanceStats(self):
         ret = []
+        rowCount =  0
         sql = 'select date_format(date,"%Y")as"year" from balance group by date_format(date,"%Y")'
         years = self.db.query(sql)
         sql = 'select source from balance group by source'
         sources = self.db.query(sql)
         for y in years:
+            rowCount += 1
             year = y['year']
             mp_year = {}
             mp = {}
             for src in sources:
+                rowCount += 1
                 src = src['source']
                 mp[src] = {}
                 alias = '主营业务收入'
@@ -217,8 +220,7 @@ class Business:
                 mp[src][alias] = tmp[0][alias]
             mp_year[year] = mp
             ret.append(mp_year)
-            GL.LOG.info(GL.dumpJson(ret))
-        return ret
+        return (ret, rowCount)
 
     def getCostStats(self):
         mp = {}
@@ -311,8 +313,6 @@ class Business:
             n = n + 1
             if n <= 3:
                 continue
-            #if n == 10:
-                #break
             if len(row) < 10:
                 continue
             mp['class1'] = row[0].value

@@ -473,9 +473,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             tw = self.twStats
             tw.clear()
             heads = self.bus.statsBalance()
-            ret = self.bus.getBalanceStats()
+            (ret, rowCount) = self.bus.getBalanceStats()
             tw.setColumnCount(len(heads))
-            tw.setRowCount(len(ret))
+            tw.setRowCount(rowCount)
             tw.setHorizontalHeaderLabels(heads)
             row = 0
             for l in ret:
@@ -492,7 +492,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         for k3,v3 in v2.items():
                             it = QTableWidgetItem(str(v3))
                             it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                            GL.LOG.info(k3)
                             col = heads.index(k3)
                             tw.setItem(row, col, it)
                         row += 1
