@@ -104,11 +104,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.edtFilterJob.textChanged.connect(self.edtFilterJobChanged)
         self.btnBrowse.clicked.connect(self.btnBrowseClicked)
         self.btnImport.clicked.connect(self.btnImportClicked)
+        self.btnClearMsg.clicked.connect(self.btnClearMsgClicked)
 
         #更多需要初始化的内容
         self.edtFile.setFocusPolicy(Qt.NoFocus)
-        self.txtLoadMsg.setFocusPolicy(Qt.NoFocus)
-        self.jobTabIndex = 2
+        #self.txtLoadMsg.setFocusPolicy(Qt.NoFocus)
+        self.jobTabIndex = 3
         self.tab.removeTab(self.jobTabIndex)   #默认隐藏job标签页
         self.tableQuery = None
         self.tableQueryZh = None
@@ -123,6 +124,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twDstHead = None
         self.itemDst = None
         self.txtDst = None
+
+    def btnClearMsgClicked(self):
+        self.txtLoadMsg.clear()
 
     def btnBrowseClicked(self):
         fn,ft = QFileDialog.getOpenFileName(self, '选择导入文件', 'c:/', 'Excel Files (*.xlsx *.xls)')
