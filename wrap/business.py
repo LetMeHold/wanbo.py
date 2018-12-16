@@ -35,7 +35,7 @@ class Business:
             '历年合同欠款率':{'row':10,'column':1,'form':'百分比'},
             '总欠款率':{'row':10,'column':2,'form':'百分比'}
         }
-        self._statsInvoice = ['月份','未税金额','税额','合计']
+        self._statsInvoice = ['月份','未税金额','税额','含税金额']
         self._statsBalance = ['主营业务收入','其他业务收入','营业外收入','支出','余额']
         self._statsCost = ['一级类目','二级类目']
 
@@ -146,8 +146,18 @@ class Business:
     def getInvoiceStats(self):
         sql = 'select date_format(date,"%Y-%m")as"月份",sum(price_notax)as"未税金额",sum(tax)as"税额" from invoice group by date_format(date,"%Y-%m")'
         ret = self.db.query(sql)
+        tmp = {}
+        tmp['月份'] = '合计'
+        tmp['未税金额'] = 0.0
+        tmp['税额'] = 0.0
+        tmp['含税金额'] = 0.0
+        i = 0
         for i in range(0,len(ret)):
-            ret[i]['合计'] = ret[i]['未税金额'] + ret[i]['税额']
+            ret[i]['含税金额'] = round(ret[i]['未税金额']+ret[i]['税额'], 2)
+            tmp['未税金额'] += ret[i]['未税金额']
+            tmp['税额'] += ret[i]['税额']
+            tmp['含税金额'] += ret[i]['含税金额']
+        ret.append(tmp)
         return ret
 
     def getBalanceStats(self):
@@ -385,8 +395,6 @@ class Business:
             n = n + 1
             if n <= 2:
                 continue
-            if n == 100:
-                break
             if len(row) < 16:
                 continue
             mp['contract'] = row[0].value

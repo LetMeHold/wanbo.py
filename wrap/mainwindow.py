@@ -129,7 +129,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.txtLoadMsg.clear()
 
     def btnBrowseClicked(self):
-        fn,ft = QFileDialog.getOpenFileName(self, '选择导入文件', 'c:/', 'Excel Files (*.xlsx *.xls)')
+        fn,ft = QFileDialog.getOpenFileName(self, '选择导入文件', 'D:\MYC\data\wanbo', 'Excel Files (*.xlsx *.xls)')
         self.edtFile.setText(fn)
 
     def btnImportClicked(self):
