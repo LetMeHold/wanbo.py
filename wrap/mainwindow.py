@@ -229,7 +229,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def resetTabJob(self):
         self.twJob.clear()
         self.edtFilterJob.clear()
-        self.tab.removeTab(1)
+        self.tab.removeTab(self.jobTabIndex)
+        self.tab.setCurrentIndex(0)
 
     def actQryRelateAccountClicked(self):
         item = self.twQuery.currentItem()
@@ -238,7 +239,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.resetTabJob()
         table_zh = '应收账款'
         self.tab.insertTab(self.jobTabIndex, self.tabJob, '操作-%s'%table_zh)
-        self.tab.setCurrentIndex(index)
+        self.tab.setCurrentIndex(self.jobTabIndex)
         self.fillTableJob(table_zh)
         self.edtFilterJob.setText(item.text())
 
@@ -254,9 +255,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return
         self.resetTabJob()
         table_zh = '收支明细'
-        index = 1
-        self.tab.insertTab(index, self.tabJob, '操作-%s'%table_zh)
-        self.tab.setCurrentIndex(index)
+        self.tab.insertTab(self.jobTabIndex, self.tabJob, '操作-%s'%table_zh)
+        self.tab.setCurrentIndex(self.jobTabIndex)
         self.fillTableJob(table_zh)
         self.edtFilterJob.setText(item.text())
         #操作页加载后才能取到tableJob的各项数据
