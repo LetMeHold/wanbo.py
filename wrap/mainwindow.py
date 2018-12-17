@@ -1,6 +1,7 @@
 from gl import *
 from ui import *
 from wrap.business import Business
+from openpyxl import Workbook
 from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem,QFileDialog
 from PyQt5.QtCore import QDate,Qt
 from PyQt5.QtGui import QIcon,QCursor,QBrush
@@ -43,7 +44,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         #统计汇总(stats)页面的表格
         self.twStats.setContextMenuPolicy(Qt.CustomContextMenu)
-        #self.twStats.customContextMenuRequested.connect(self.tableStatsMenu)
+        self.twStats.customContextMenuRequested.connect(self.tableStatsMenu)
         self.twStats.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twStats.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         #self.twStats.itemDoubleClicked.connect(self.tableStatsItemEdit)
@@ -95,6 +96,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.menuTableJob.addAction(self.actJobRelate)
         self.actJobRelate.triggered.connect(self.actJobRelateClicked)
 
+        #统计汇总页面的右键菜单
+        self.menuTableStats = QMenu(self)
+
+        self.actStatsExport = QAction(self)
+        self.actStatsExport.setText('导出')
+        self.menuTableStats.addAction(self.actStatsExport)
+        self.actStatsExport.triggered.connect(self.actStatsExportClicked)
+
         #其他控件关联
         self.btnRefresh.clicked.connect(self.btnRefreshClicked)
         self.btnJobRefresh.clicked.connect(self.btnJobRefreshClicked)
@@ -129,7 +138,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.txtLoadMsg.clear()
 
     def btnBrowseClicked(self):
-        fn,ft = QFileDialog.getOpenFileName(self, '选择导入文件', 'D:\MYC\data\wanbo', 'Excel Files (*.xlsx *.xls)')
+        fn,ft = QFileDialog.getOpenFileName(self, '选择导入文件', 'D:\MYC\data\wanbo', 'Excel Files (*.xlsx)')
         self.edtFile.setText(fn)
 
     def btnImportClicked(self):
@@ -219,6 +228,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.tableJobZh=='应收账款' or self.tableJobZh=='收支明细':
             self.actJobRelate.setVisible(True)
         self.menuTableJob.popup(QCursor.pos())
+
+    def tableStatsMenu(self, pos):
+        self.menuTableStats.popup(QCursor.pos())
 
     def actQryFilterClicked(self):
         item = self.twQuery.currentItem()
@@ -580,4 +592,118 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             pass
 
+
+    def actStatsExportClicked(self):
+        wb = Workbook()
+
+        ws = wb.active
+        ws.title = '费用统计'
+        heads = self.bus.statsCost()
+        (ret,count) = self.bus.getCostStats()
+        ws.append(heads)
+        row = 2
+        col = 1
+        ws.cell(row=row,column=col).value = '总费用汇总'
+        for p in ret['总费用汇总']['费用']:
+            mon = p['月份']
+            cost = p['费用']
+            if cost == None:
+                cost = 0.0
+            col = heads.index(mon) + 1
+            ws.cell(row=row,column=col).value = cost
+        #一级和二级类目
+        row = 3
+        for class1,v1 in ret.items():
+            if class1 == '总费用汇总':
+                continue
+            #一级类目
+            col = 1
+            ws.cell(row=row,column=col).value = class1
+            #一级类目的费用
+            if '费用' in v1:
+                for p1 in v1['费用']:
+                    mon = p1['月份']
+                    cost = p1['费用']
+                    if cost == None:
+                        cost = 0.0
+                    col = heads.index(mon) + 1
+                    ws.cell(row=row,column=col).value = cost
+            #二级类目
+            if '二级类目' in v1:
+                for class2,v2 in v1['二级类目'].items():
+                    row += 1
+                    col = 2
+                    ws.cell(row=row,column=col).value = class2
+                    #二级类目的费用
+                    for p2 in v2:
+                        mon = p2['月份']
+                        cost = p2['费用']
+                        if cost == None:
+                            cost = 0.0
+                        col = heads.index(mon) + 1
+                        ws.cell(row=row,column=col).value = cost
+            row += 1
+
+        ws = wb.create_sheet('开票统计')
+        heads = self.bus.statsInvoice()
+        ret = self.bus.getInvoiceStats()
+        ws.append(heads)
+        row = 2
+        for l in ret:
+            for k,v in l.items():
+                col = heads.index(k) + 1
+                ws.cell(row=row,column=col).value = v
+            row += 1
+
+        ws = wb.create_sheet('收支统计')
+        heads = self.bus.statsBalance()
+        (ret, rowCount) = self.bus.getBalanceStats()
+        ws.append(heads)
+        row = 2
+        for l in ret:
+            for k1,v1 in l.items():
+                col = 1
+                ws.cell(row=row,column=col).value = k1
+                for k2,v2 in v1.items():
+                    col = 2
+                    ws.cell(row=row,column=col).value = k2
+                    for k3,v3 in v2.items():
+                        col = heads.index(k3) + 1
+                        ws.cell(row=row,column=col).value = v3
+                    row += 1
+                row += 1
+
+        ws = wb.create_sheet('应收账款统计')
+        ret = self.bus.getAccountStats()
+        if ret['今年合同额'] != 0.0:
+            ret['今年合同欠款率'] = ret['今年未收款额'] / ret['今年合同额']
+        else:
+            ret['今年合同欠款率'] = 0.0
+        if ret['历年合同额'] != 0.0:
+            ret['历年合同欠款率'] = ret['历年未收款额'] / ret['历年合同额']
+        else:
+            ret['历年合同欠款率'] = 0.0
+        if ret['合同总额'] != 0.0:
+            ret['总欠款率'] = ret['未收款总额'] / ret['合同总额']
+        else:
+            ret['总欠款率'] = 0.0
+        struct = self.bus.statsAccount()
+        for k,v in ret.items():
+            if k not in struct:
+                continue
+            if v == None:
+                v = 0.0
+            cell1 = k
+            cell2 = None
+            if struct[k]['form'] == '百分比':
+                cell2 = '%.2f%%' % (v*100)
+            else:
+                cell2 = v
+            row = struct[k]['row'] + 1
+            col = struct[k]['column'] + 1
+            ws.cell(row=row,column=col).value = cell1
+            ws.cell(row=row+1,column=col).value = cell2
+
+        fn,ft = QFileDialog.getSaveFileName(self, '保存文件', 'D:\MYC\data\wanbo', 'Excel Files (*.xlsx)')
+        wb.save(fn)
 
