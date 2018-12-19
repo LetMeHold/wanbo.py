@@ -2,9 +2,60 @@ from gl import *
 from ui import *
 from wrap.business import Business
 from openpyxl import Workbook
-from PyQt5.QtWidgets import QMainWindow,QTableWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem,QFileDialog
+from PyQt5.QtWidgets import QMainWindow,QDialog,QTableWidgetItem,QListWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem,QFileDialog
 from PyQt5.QtCore import QDate,Qt
 from PyQt5.QtGui import QIcon,QCursor,QBrush
+
+class FilterDialog(QDialog, Ui_FilterDialog):
+    def __init__(self, parent=None):
+        QDialog.__init__(self, parent)
+        self.setupUi(self)
+        self.listFilter.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.listFilter.customContextMenuRequested.connect(self.listFilterMenu)
+
+        self.menuListFilter = QMenu(self)
+        self.actClear = QAction(self)
+        self.actClear.setText('清空')
+        self.menuListFilter.addAction(self.actClear)
+        self.actClear.triggered.connect(self.actClearClicked)
+
+        self.lst = []
+
+    def listFilterMenu(self):
+        self.menuListFilter.popup(QCursor.pos())
+
+    def clear(self):
+        self.listFilter.clear()
+
+    def add(self, enHead, zhHead, typ, value):
+        if typ == 'int':
+            en = '%s=%d' % (enHead,int(value))
+            zh = '%s=%d' % (zhHead,int(value))
+        elif typ == 'double':
+            en = '%s=%.2f' % (enHead,float(value))
+            zh = '%s=%.2f' % (zhHead,float(value))
+        else:
+            en = '%s="%s"' % (enHead,value)
+            zh = '%s="%s"' % (zhHead,value)
+        tmp = {}
+        tmp [en] = zh
+        QListWidgetItem(zh, self.listFilter)
+        self.lst.append(tmp)
+        GL.LOG.info(self.sql())
+
+    def actClearClicked(self):
+        self.clear()
+        self.lst.clear()
+
+    def sql(self):
+        if len(self.lst)==0:
+            return None
+        sql = ''
+        for tmp in self.lst:
+            for k in tmp.keys():
+                sql += '%s and ' % k
+        sql = sql.rstrip(' and ')
+        return sql
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
@@ -23,7 +74,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def actQryTestClicked(self):
         pass
-
 
     def init(self):
         #数据管理(Query)页面的表格
@@ -88,6 +138,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.menuTableQuery.addAction(self.actQryTest)
         self.actQryTest.triggered.connect(self.actQryTestClicked)
 
+        self.actQryAdvFilter = QAction(self)
+        self.actQryAdvFilter.setText('添加到高级筛选')
+        self.menuTableQuery.addAction(self.actQryAdvFilter)
+        self.actQryAdvFilter.triggered.connect(self.actQryAdvFilterClicked)
+
         #操作(Job)页面的右键菜单
         self.menuTableJob = QMenu(self)
 
@@ -114,8 +169,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnBrowse.clicked.connect(self.btnBrowseClicked)
         self.btnImport.clicked.connect(self.btnImportClicked)
         self.btnClearMsg.clicked.connect(self.btnClearMsgClicked)
+        self.btnAdvFilter.clicked.connect(self.btnAdvFilterClicked)
 
         #更多需要初始化的内容
+        self.dlg = FilterDialog(self)
         self.edtFile.setFocusPolicy(Qt.NoFocus)
         self.txtLoadMsg.setFocusPolicy(Qt.NoFocus)
         self.jobTabIndex = 3
@@ -133,6 +190,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twDstHead = None
         self.itemDst = None
         self.txtDst = None
+
+    def btnAdvFilterClicked(self):
+        self.dlg.open()
+
+    def actQryAdvFilterClicked(self):
+        it = self.twQuery.currentItem()
+        if it!=None and it.text()!=None and it.text()!='':
+            itHead = self.twQuery.horizontalHeaderItem(it.column())
+            zhHead = itHead.text()
+            index = self.tableQueryHead[1].index(zhHead)
+            enHead = self.tableQueryHead[0][index]
+            typ = self.tableQueryHead[2][index]
+            self.dlg.add(enHead, zhHead, typ, it.text())
 
     def btnClearMsgClicked(self):
         self.txtLoadMsg.clear()
@@ -170,6 +240,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def treeQueryItemActivated(self, itemNew, itemOld):
         self.fillTableQuery(itemNew.text(0))
+        self.dlg.clear()
 
     def tableQueryItemEdit(self, item):
         r = item.row()
@@ -312,9 +383,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def fillTableQuery(self, table):
         if table not in self.bus.tables():
             return
+        condition = None
+        if self.cbFilter.isChecked():
+            condition = self.dlg.sql()
         self.tableQuery = self.bus.tables()[table]
         self.tableQueryZh = table
-        self.tableQueryData = self.bus.selectTableData(self.tableQuery)
+        self.tableQueryData = self.bus.selectTableData(self.tableQuery, condition)
         self.tableQueryHead = self.bus.selectTableHead(self.tableQuery)
         self.fillTable(self.twQuery, self.tableQuery, self.tableQueryData, self.tableQueryHead)
 

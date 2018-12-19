@@ -93,8 +93,11 @@ class Business:
             suffix += '%TBD,'
         return '%s) %s)' % (prefix.rstrip(','),suffix.rstrip(','))
 
-    def selectTableData(self, table):
-        sql = 'select * from %s' % table
+    def selectTableData(self, table, condition=None):
+        if condition == None:
+            sql = 'select * from %s' % table
+        else:
+            sql = 'select * from %s where %s' % (table,condition)
         return self.db.query(sql)
 
     def updateTableById(self, table, field, tp, value, field_id, value_id):

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>817</width>
-    <height>600</height>
+    <width>956</width>
+    <height>660</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -141,6 +141,38 @@
                </size>
               </property>
              </spacer>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="cbFilter">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>25</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>启用</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnAdvFilter">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>25</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>高级筛选</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -536,8 +568,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>817</width>
-     <height>30</height>
+     <width>956</width>
+     <height>26</height>
     </rect>
    </property>
   </widget>
