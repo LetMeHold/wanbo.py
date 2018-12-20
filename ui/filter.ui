@@ -13,9 +13,9 @@
   <property name="windowTitle">
    <string>高级筛选</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-    <widget class="QListWidget" name="listFilter"/>
+    <widget class="QTableWidget" name="twFilter"/>
    </item>
   </layout>
  </widget>

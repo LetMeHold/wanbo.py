@@ -10,75 +10,71 @@ class FilterDialog(QDialog, Ui_FilterDialog):
     def __init__(self, parent=None):
         QDialog.__init__(self, parent)
         self.setupUi(self)
-        self.listFilter.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.listFilter.customContextMenuRequested.connect(self.listFilterMenu)
 
-        self.menuListFilter = QMenu(self)
+        self.menuTwFilter = QMenu(self)
         self.actClear = QAction(self)
         self.actClear.setText('清空')
-        self.menuListFilter.addAction(self.actClear)
+        self.menuTwFilter.addAction(self.actClear)
         self.actClear.triggered.connect(self.actClearClicked)
 
-        self.lst = []
+        self.twFilter.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.twFilter.customContextMenuRequested.connect(self.twFilterMenu)
+        self.twFilter.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
+        self.twFilter.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
+        self.twFilter.setColumnCount(20)
+        self.twFilter.setRowCount(15)
 
-    def listFilterMenu(self):
-        self.menuListFilter.popup(QCursor.pos())
+        self.zhHead = []
+        self.enHead = []
+        self.data = {}
+
+    def twFilterMenu(self):
+        self.menuTwFilter.popup(QCursor.pos())
 
     def clear(self):
-        self.listFilter.clear()
+        self.twFilter.clear()
+        self.zhHead.clear()
+        self.enHead.clear()
+        self.data.clear()
 
     def add(self, enHead, zhHead, typ, value):
         if typ == 'int':
-            value = '%d' % int(value)
+            value = int(value)
         elif typ == 'double':
-            value = '%.2f' % float(value)
-        else:
-            value = '"%s"' % value
+            value = float(value)
 
-        add = 0 #0:新增的列和值  1:列已存在,新增一个可选值
-        tmp = None
-        for tmp in self.lst:
-            if zhHead in tmp and enHead in tmp[zhHead]:
-                if value in tmp[zhHead][enHead]:
-                    return  #已存在的筛选
-                else:
-                    add = 1
-                    break
-        if add == 0:
-            tmp = {zhHead:{enHead:[value,]}}
-            show = '%s: %s' % (zhHead,self.groupSql(tmp[zhHead]))
-            QListWidgetItem(show, self.listFilter)
-            self.lst.append(tmp)
-        elif add == 1:
-            show = '%s: %s' % (zhHead,self.groupSql(tmp[zhHead]))
-            it = self.listFilter.findItems(show, Qt.MatchExactly)
-            tmp[zhHead][enHead].append(value)
-            show = '%s: %s' % (zhHead,self.groupSql(tmp[zhHead]))
-            it[0].setText(show)
+        show = True
+        if zhHead not in self.zhHead:
+            self.zhHead.append(zhHead)
+            self.enHead.append(enHead)
+            self.data[zhHead] = []
+            self.data[zhHead].append(value)
+            self.twFilter.setHorizontalHeaderLabels(self.zhHead)
+        else:
+            if value not in self.data[zhHead]:
+                self.data[zhHead].append(value)
+            else:
+                show = False
+
+        if show:
+            row = self.data[zhHead].index(value)
+            col = self.zhHead.index(zhHead)
+            it = QTableWidgetItem(str(value))
+            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+            self.twFilter.setItem(row, col, it)
 
     def actClearClicked(self):
         self.clear()
-        self.lst.clear()
 
     def sql(self):
-        if len(self.lst)==0:
+        if len(self.zhHead) == 0:
             return None
         sql = ''
-        for tmp in self.lst:
-            for v1 in tmp.values():
-                sql += '%s and ' % self.groupSql(v1)
+        for n in range(0, len(self.zhHead)):
+            sql += '%s in %s and ' % (self.enHead[n],self.data[self.zhHead[n]])
         sql = sql.rstrip(' and ')
-        return sql
-
-    def groupSql(self, tmp):
-        sql = ''
-        for k,v in tmp.items():
-            sql += '%s in (' % k
-            for val in v:
-                sql += '%s,' % val
-            sql = sql.rstrip(',')
-            sql += ') and '
-        sql = sql.rstrip(' and ')
+        sql = sql.replace('[', '(')
+        sql = sql.replace(']', ')')
         return sql
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -492,7 +488,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     tmp = ''
                 it = QTableWidgetItem(str(tmp))
                 tw.setItem(r,c,it)
-                #if c == 0:
                 it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                 tw.setRowHidden(r, False)
         tw.setVisible(True)

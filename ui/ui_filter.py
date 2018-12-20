@@ -12,11 +12,13 @@ class Ui_FilterDialog(object):
     def setupUi(self, FilterDialog):
         FilterDialog.setObjectName("FilterDialog")
         FilterDialog.resize(765, 384)
-        self.verticalLayout = QtWidgets.QVBoxLayout(FilterDialog)
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.listFilter = QtWidgets.QListWidget(FilterDialog)
-        self.listFilter.setObjectName("listFilter")
-        self.verticalLayout.addWidget(self.listFilter)
+        self.horizontalLayout = QtWidgets.QHBoxLayout(FilterDialog)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.twFilter = QtWidgets.QTableWidget(FilterDialog)
+        self.twFilter.setObjectName("twFilter")
+        self.twFilter.setColumnCount(0)
+        self.twFilter.setRowCount(0)
+        self.horizontalLayout.addWidget(self.twFilter)
 
         self.retranslateUi(FilterDialog)
         QtCore.QMetaObject.connectSlotsByName(FilterDialog)
