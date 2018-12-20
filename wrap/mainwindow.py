@@ -29,19 +29,34 @@ class FilterDialog(QDialog, Ui_FilterDialog):
 
     def add(self, enHead, zhHead, typ, value):
         if typ == 'int':
-            en = '%s=%d' % (enHead,int(value))
-            zh = '%s=%d' % (zhHead,int(value))
+            value = '%d' % int(value)
         elif typ == 'double':
-            en = '%s=%.2f' % (enHead,float(value))
-            zh = '%s=%.2f' % (zhHead,float(value))
+            value = '%.2f' % float(value)
         else:
-            en = '%s="%s"' % (enHead,value)
-            zh = '%s="%s"' % (zhHead,value)
-        tmp = {}
-        tmp [en] = zh
-        QListWidgetItem(zh, self.listFilter)
-        self.lst.append(tmp)
-        GL.LOG.info(self.sql())
+            value = '"%s"' % value
+
+        add = 0 #0:新增的列和值  1:列已存在,新增一个可选值
+        tmp = None
+        for tmp in self.lst:
+            if zhHead in tmp and enHead in tmp[zhHead]:
+                if value in tmp[zhHead][enHead]:
+                    return  #已存在的筛选
+                else:
+                    add = 1
+                    break
+        if add == 0:
+            tmp = {zhHead:{enHead:[value,]}}
+            show = '%s: %s' % (zhHead,self.groupSql(tmp[zhHead]))
+            GL.LOG.info(tmp)
+            GL.LOG.info(self.groupSql(tmp[zhHead]))
+            QListWidgetItem(show, self.listFilter)
+            self.lst.append(tmp)
+        elif add == 1:
+            show = '%s: %s' % (zhHead,self.groupSql(tmp[zhHead]))
+            it = self.listFilter.findItems(show, Qt.MatchExactly)
+            tmp[zhHead][enHead].append(value)
+            show = '%s: %s' % (zhHead,self.groupSql(tmp[zhHead]))
+            it[0].setText(show)
 
     def actClearClicked(self):
         self.clear()
@@ -52,8 +67,24 @@ class FilterDialog(QDialog, Ui_FilterDialog):
             return None
         sql = ''
         for tmp in self.lst:
-            for k in tmp.keys():
-                sql += '%s and ' % k
+            for v1 in tmp.values():
+                sql += '%s and ' % self.groupSql(v1)
+                #for k2,v2 in v1.items():
+                #    if len(v2) == 1:
+                #        sql += '%s = %s and ' % (k2,v2[0])
+                #    else:
+                #        sql += '%s in %s and ' % (k2,tuple(v2))
+        sql = sql.rstrip(' and ')
+        return sql
+
+    def groupSql(self, tmp):
+        sql = ''
+        for k,v in tmp.items():
+            sql += '%s in (' % k
+            for val in v:
+                sql += '%s,' % val
+            sql = sql.rstrip(',')
+            sql += ') and '
         sql = sql.rstrip(' and ')
         return sql
 
