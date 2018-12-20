@@ -11,18 +11,25 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         QDialog.__init__(self, parent)
         self.setupUi(self)
 
-        self.menuTwFilter = QMenu(self)
-        self.actClear = QAction(self)
-        self.actClear.setText('清空')
-        self.menuTwFilter.addAction(self.actClear)
-        self.actClear.triggered.connect(self.actClearClicked)
-
         self.twFilter.setContextMenuPolicy(Qt.CustomContextMenu)
         self.twFilter.customContextMenuRequested.connect(self.twFilterMenu)
         self.twFilter.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twFilter.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
-        self.twFilter.setColumnCount(20)
-        self.twFilter.setRowCount(15)
+
+        self.menuTwFilter = QMenu(self)
+
+        self.actDel = QAction(self)
+        self.actDel.setText('删除')
+        self.menuTwFilter.addAction(self.actDel)
+        self.actDel.triggered.connect(self.actDelClicked)
+        self.actClear = QAction(self)
+        self.actClear.setText('清空')
+        self.menuTwFilter.addAction(self.actClear)
+        self.actClear.triggered.connect(self.actClearClicked)
+        self.actFlush = QAction(self)
+        self.actFlush.setText('刷新')
+        self.menuTwFilter.addAction(self.actFlush)
+        self.actFlush.triggered.connect(self.actFlushClicked)
 
         self.zhHead = []
         self.enHead = []
@@ -49,7 +56,6 @@ class FilterDialog(QDialog, Ui_FilterDialog):
             self.enHead.append(enHead)
             self.data[zhHead] = []
             self.data[zhHead].append(value)
-            self.twFilter.setHorizontalHeaderLabels(self.zhHead)
         else:
             if value not in self.data[zhHead]:
                 self.data[zhHead].append(value)
@@ -61,10 +67,27 @@ class FilterDialog(QDialog, Ui_FilterDialog):
             col = self.zhHead.index(zhHead)
             it = QTableWidgetItem(str(value))
             it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-            self.twFilter.setItem(row, col, it)
+            self.flushTable()
 
     def actClearClicked(self):
         self.clear()
+
+    def actFlushClicked(self):
+        self.flushTable()
+
+    def actDelClicked(self):
+        it = self.twFilter.currentItem()
+        if it != None:
+            r = it.row()
+            c = it.column()
+            GL.LOG.debug(self.data[self.zhHead[c]])
+            #self.twFilter.setItem(it.row(), it.column(), None)
+            if len(self.data[self.zhHead[c]]) == 0:
+                del self.data[self.zhHead[c]]
+                del self.enHead[c]
+                del self.zhHead[c]
+                #self.twFilter.removeColumn(c)
+            self.flushTable()
 
     def sql(self):
         if len(self.zhHead) == 0:
@@ -76,6 +99,18 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         sql = sql.replace('[', '(')
         sql = sql.replace(']', ')')
         return sql
+
+    def flushTable(self):
+        self.twFilter.clear()
+        self.twFilter.setColumnCount(20)
+        self.twFilter.setRowCount(15)
+        self.twFilter.setHorizontalHeaderLabels(self.zhHead)
+        for c in range(0, len(self.zhHead)):
+            for r in range(0, len(self.data[self.zhHead[c]])):
+                value = self.data[self.zhHead[c]][r]
+                it = QTableWidgetItem(str(value))
+                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                self.twFilter.setItem(r, c, it)
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
