@@ -98,7 +98,6 @@ class Business:
             sql = 'select * from %s' % table
         else:
             sql = 'select * from %s where %s' % (table,condition)
-            GL.LOG.info(sql)
         return self.db.query(sql)
 
     def updateTableById(self, table, field, tp, value, field_id, value_id):

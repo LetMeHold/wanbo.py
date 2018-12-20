@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_FilterDialog(object):
     def setupUi(self, FilterDialog):
         FilterDialog.setObjectName("FilterDialog")
-        FilterDialog.resize(491, 396)
+        FilterDialog.resize(765, 384)
         self.verticalLayout = QtWidgets.QVBoxLayout(FilterDialog)
         self.verticalLayout.setObjectName("verticalLayout")
         self.listFilter = QtWidgets.QListWidget(FilterDialog)

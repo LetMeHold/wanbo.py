@@ -47,8 +47,6 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         if add == 0:
             tmp = {zhHead:{enHead:[value,]}}
             show = '%s: %s' % (zhHead,self.groupSql(tmp[zhHead]))
-            GL.LOG.info(tmp)
-            GL.LOG.info(self.groupSql(tmp[zhHead]))
             QListWidgetItem(show, self.listFilter)
             self.lst.append(tmp)
         elif add == 1:
@@ -69,11 +67,6 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         for tmp in self.lst:
             for v1 in tmp.values():
                 sql += '%s and ' % self.groupSql(v1)
-                #for k2,v2 in v1.items():
-                #    if len(v2) == 1:
-                #        sql += '%s = %s and ' % (k2,v2[0])
-                #    else:
-                #        sql += '%s in %s and ' % (k2,tuple(v2))
         sql = sql.rstrip(' and ')
         return sql
 
