@@ -239,8 +239,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 pass
 
     def treeQueryItemActivated(self, itemNew, itemOld):
-        self.fillTableQuery(itemNew.text(0))
+        self.cbFilter.setChecked(False)
         self.dlg.clear()
+        self.fillTableQuery(itemNew.text(0))
 
     def tableQueryItemEdit(self, item):
         r = item.row()
