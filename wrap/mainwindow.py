@@ -15,6 +15,7 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         self.twFilter.customContextMenuRequested.connect(self.twFilterMenu)
         self.twFilter.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twFilter.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
+        self.twFilter.itemDoubleClicked.connect(self.tableFilterItemEdit)
 
         self.menuTwFilter = QMenu(self)
 
@@ -94,6 +95,8 @@ class FilterDialog(QDialog, Ui_FilterDialog):
             return None
         sql = ''
         for n in range(0, len(self.zhHead)):
+            if '' in self.data[self.zhHead[n]]:
+                sql += '%s is null or ' % self.enHead[n]
             sql += '%s in %s and ' % (self.enHead[n],self.data[self.zhHead[n]])
         sql = sql.rstrip(' and ')
         sql = sql.replace('[', '(')
@@ -111,6 +114,18 @@ class FilterDialog(QDialog, Ui_FilterDialog):
                 it = QTableWidgetItem(str(value))
                 it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                 self.twFilter.setItem(r, c, it)
+
+    def tableFilterItemEdit(self, item):
+        if item == None:
+            return
+        r = item.row()
+        c = item.column()
+        old = item.text()
+        (new, ok) = QInputDialog.getText(self,'编辑表格','输入新内容：', text=old)
+        if ok and new!=old:
+            self.data[self.zhHead[c]][r] = new
+            item.setText(new)
+            self.flushTable()
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
@@ -247,11 +262,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.txtDst = None
 
     def btnAdvFilterClicked(self):
-        self.dlg.open()
+        self.dlg.show()
 
     def actQryAdvFilterClicked(self):
         it = self.twQuery.currentItem()
-        if it!=None and it.text()!=None and it.text()!='':
+        if it!=None and it.text()!=None:
             itHead = self.twQuery.horizontalHeaderItem(it.column())
             zhHead = itHead.text()
             index = self.tableQueryHead[1].index(zhHead)
