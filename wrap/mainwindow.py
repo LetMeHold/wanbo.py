@@ -61,14 +61,22 @@ class FilterDialog(QDialog, Ui_FilterDialog):
             self.zhHead.append(zhHead)
             self.enHead.append(enHead)
             self.data[zhHead] = []
-        if value!=None and value not in self.data[zhHead]:
-            if typ == 'int':
-                value = int(value)
-            elif typ == 'double':
-                value = float(value)
-            elif value == '':
-                value = '空'
-            self.data[zhHead].append(value)
+
+        try:
+            if value!=None and value not in self.data[zhHead]:
+                if value=='' or value=='空':
+                    value = '空'
+                elif typ == 'int':
+                    value = int(value)
+                elif typ == 'double':
+                    value = float(value)
+                self.data[zhHead].append(value)
+        except:
+            err = '内容类型不匹配'
+            GL.LOG.error(err)
+            GL.LOG.debug(value)
+            QMessageBox.critical(self, 'Error', err)
+
         self.flushTable()
 
     def actClearClicked(self):
@@ -103,12 +111,13 @@ class FilterDialog(QDialog, Ui_FilterDialog):
             if len(self.data[self.zhHead[n]]) == 0:
                 continue
             if '空' in self.data[self.zhHead[n]]:
-                sql += '%s is null or ' % self.enHead[n]
-            sql += '%s in %s and ' % (self.enHead[n],self.data[self.zhHead[n]])
+                sql += '(%s is null or %s in %s) and ' % (self.enHead[n],self.enHead[n],self.data[self.zhHead[n]])
+            else:
+                sql += '%s in %s and ' % (self.enHead[n],self.data[self.zhHead[n]])
         sql = sql.rstrip(' and ')
         sql = sql.replace('[', '(')
         sql = sql.replace(']', ')')
-        sql = sql.replace('空', '')
+        sql = sql.replace(', \'空\'', '')
         return sql
 
     def flushTable(self):
@@ -145,10 +154,9 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         if new == '':
             new = '空'
         if ok and new!=old:
-            if r >= len(self.data[self.zhHead[c]]):
-                self.data[self.zhHead[c]].append(new)
-            else:
-                self.data[self.zhHead[c]][r] = new
+            if r < len(self.data[self.zhHead[c]]):
+                del self.data[self.zhHead[c]][r]
+            self.add(self.zhHead[c], new)
             self.flushTable()
 
     def btnAddFieldClicked(self):
