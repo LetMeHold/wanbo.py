@@ -180,6 +180,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
+        self.setWindowIcon(QIcon('ui/logo.png'))
         GL.LOG = getLogger('WanboLoger', 'logs', 'console.log')
         GL.LOG.info('主程序启动')
         self.bus = Business()
