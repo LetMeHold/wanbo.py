@@ -38,8 +38,11 @@ class FilterDialog(QDialog, Ui_FilterDialog):
 
         self.btnAddField.clicked.connect(self.btnAddFieldClicked)
 
+        self.rbDay.setChecked(True)
+
         self.zhHead = []
         self.enHead = []
+        self.typ = []
         self.data = {}
         self.fullHead = None
 
@@ -50,6 +53,7 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         self.twFilter.clear()
         self.zhHead.clear()
         self.enHead.clear()
+        self.typ.clear()
         self.data.clear()
 
     def add(self, zhHead, value):
@@ -60,6 +64,7 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         if zhHead not in self.zhHead:
             self.zhHead.append(zhHead)
             self.enHead.append(enHead)
+            self.typ.append(typ)
             self.data[zhHead] = []
 
         try:
@@ -99,6 +104,7 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         if it != None:
             del self.data[self.zhHead[c]]
             del self.enHead[c]
+            del self.typ[c]
             del self.zhHead[c]
             self.flushTable()
 
@@ -109,10 +115,16 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         for n in range(0, len(self.zhHead)):
             if len(self.data[self.zhHead[n]]) == 0:
                 continue
+            field = self.enHead[n]
+            if self.typ[n]=='date':
+                if self.rbMonth.isChecked():
+                    field = 'date_format(%s,"%%Y-%%m")' % field
+                elif self.rbYear.isChecked():
+                    field = 'date_format(%s,"%%Y")' % field
             if '空' in self.data[self.zhHead[n]]:
-                sql += '(%s is null or %s in %s) and ' % (self.enHead[n],self.enHead[n],self.data[self.zhHead[n]])
+                sql += '(%s is null or %s in %s) and ' % (self.enHead[n],field,self.data[self.zhHead[n]])
             else:
-                sql += '%s in %s and ' % (self.enHead[n],self.data[self.zhHead[n]])
+                sql += '%s in %s and ' % (field,self.data[self.zhHead[n]])
         sql = sql.rstrip(' and ')
         sql = sql.replace('[', '(')
         sql = sql.replace(']', ')')

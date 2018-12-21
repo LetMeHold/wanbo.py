@@ -58,6 +58,34 @@
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>日期匹配：</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="rbYear">
+       <property name="text">
+        <string>年</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="rbMonth">
+       <property name="text">
+        <string>月</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="rbDay">
+       <property name="text">
+        <string>日</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
