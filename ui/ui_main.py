@@ -263,7 +263,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "财务管理系统"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "万泊"))
         self.label_10.setText(_translate("MainWindow", "筛选"))
         self.btnRefresh.setText(_translate("MainWindow", "刷新"))
         self.btnAdd.setText(_translate("MainWindow", "新增"))

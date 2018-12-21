@@ -2,7 +2,7 @@ from gl import *
 from ui import *
 from wrap.business import Business
 from openpyxl import Workbook
-from PyQt5.QtWidgets import QMainWindow,QDialog,QTableWidgetItem,QListWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem,QFileDialog
+from PyQt5.QtWidgets import QMainWindow,QDialog,QTableWidgetItem,QAbstractItemView,QListWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem,QFileDialog
 from PyQt5.QtCore import QDate,Qt
 from PyQt5.QtGui import QIcon,QCursor,QBrush
 
@@ -15,14 +15,18 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         self.twFilter.customContextMenuRequested.connect(self.twFilterMenu)
         self.twFilter.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twFilter.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
+        #self.twFilter.setEditTriggers(QAbstractItemView.NoEditTriggers);
         self.twFilter.itemDoubleClicked.connect(self.tableFilterItemEdit)
-
         self.menuTwFilter = QMenu(self)
 
         self.actDel = QAction(self)
         self.actDel.setText('删除')
         self.menuTwFilter.addAction(self.actDel)
         self.actDel.triggered.connect(self.actDelClicked)
+        self.actDelCol = QAction(self)
+        self.actDelCol.setText('删除列')
+        self.menuTwFilter.addAction(self.actDelCol)
+        self.actDelCol.triggered.connect(self.actDelColClicked)
         self.actClear = QAction(self)
         self.actClear.setText('清空')
         self.menuTwFilter.addAction(self.actClear)
@@ -32,9 +36,12 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         self.menuTwFilter.addAction(self.actFlush)
         self.actFlush.triggered.connect(self.actFlushClicked)
 
+        self.btnAddField.clicked.connect(self.btnAddFieldClicked)
+
         self.zhHead = []
         self.enHead = []
         self.data = {}
+        self.fullHead = None
 
     def twFilterMenu(self):
         self.menuTwFilter.popup(QCursor.pos())
@@ -45,30 +52,24 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         self.enHead.clear()
         self.data.clear()
 
-    def add(self, enHead, zhHead, typ, value):
-        if typ == 'int':
-            value = int(value)
-        elif typ == 'double':
-            value = float(value)
+    def add(self, zhHead, value):
+        index = self.fullHead[1].index(zhHead)
+        enHead = self.fullHead[0][index]
+        typ = self.fullHead[2][index]
 
-        show = True
         if zhHead not in self.zhHead:
             self.zhHead.append(zhHead)
             self.enHead.append(enHead)
             self.data[zhHead] = []
+        if value!=None and value not in self.data[zhHead]:
+            if typ == 'int':
+                value = int(value)
+            elif typ == 'double':
+                value = float(value)
+            elif value == '':
+                value = '空'
             self.data[zhHead].append(value)
-        else:
-            if value not in self.data[zhHead]:
-                self.data[zhHead].append(value)
-            else:
-                show = False
-
-        if show:
-            row = self.data[zhHead].index(value)
-            col = self.zhHead.index(zhHead)
-            it = QTableWidgetItem(str(value))
-            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-            self.flushTable()
+        self.flushTable()
 
     def actClearClicked(self):
         self.clear()
@@ -81,13 +82,17 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         if it != None:
             r = it.row()
             c = it.column()
-            GL.LOG.debug(self.data[self.zhHead[c]])
-            #self.twFilter.setItem(it.row(), it.column(), None)
-            if len(self.data[self.zhHead[c]]) == 0:
-                del self.data[self.zhHead[c]]
-                del self.enHead[c]
-                del self.zhHead[c]
-                #self.twFilter.removeColumn(c)
+            del self.data[self.zhHead[c]][r]
+            self.twFilter.setItem(it.row(), it.column(), None)
+            self.flushTable()
+
+    def actDelColClicked(self):
+        c = self.twFilter.currentColumn()
+        it = self.twFilter.horizontalHeaderItem(c)
+        if it != None:
+            del self.data[self.zhHead[c]]
+            del self.enHead[c]
+            del self.zhHead[c]
             self.flushTable()
 
     def sql(self):
@@ -95,18 +100,26 @@ class FilterDialog(QDialog, Ui_FilterDialog):
             return None
         sql = ''
         for n in range(0, len(self.zhHead)):
-            if '' in self.data[self.zhHead[n]]:
+            if len(self.data[self.zhHead[n]]) == 0:
+                continue
+            if '空' in self.data[self.zhHead[n]]:
                 sql += '%s is null or ' % self.enHead[n]
             sql += '%s in %s and ' % (self.enHead[n],self.data[self.zhHead[n]])
         sql = sql.rstrip(' and ')
         sql = sql.replace('[', '(')
         sql = sql.replace(']', ')')
+        sql = sql.replace('空', '')
         return sql
 
     def flushTable(self):
         self.twFilter.clear()
         self.twFilter.setColumnCount(20)
         self.twFilter.setRowCount(15)
+        for r in range(0,self.twFilter.rowCount()):
+            for c in range(0,self.twFilter.columnCount()):
+                it = QTableWidgetItem('')
+                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                self.twFilter.setItem(r, c, it)
         self.twFilter.setHorizontalHeaderLabels(self.zhHead)
         for c in range(0, len(self.zhHead)):
             for r in range(0, len(self.data[self.zhHead[c]])):
@@ -115,17 +128,33 @@ class FilterDialog(QDialog, Ui_FilterDialog):
                 it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                 self.twFilter.setItem(r, c, it)
 
+    def flushCombobox(self, head):
+        self.fullHead = head
+        self.cmbField.clear()
+        self.cmbField.addItems(head[1])
+
     def tableFilterItemEdit(self, item):
         if item == None:
             return
         r = item.row()
         c = item.column()
+        if c >= len(self.zhHead):
+            return
         old = item.text()
         (new, ok) = QInputDialog.getText(self,'编辑表格','输入新内容：', text=old)
+        if new == '':
+            new = '空'
         if ok and new!=old:
-            self.data[self.zhHead[c]][r] = new
-            item.setText(new)
+            if r >= len(self.data[self.zhHead[c]]):
+                self.data[self.zhHead[c]].append(new)
+            else:
+                self.data[self.zhHead[c]][r] = new
             self.flushTable()
+
+    def btnAddFieldClicked(self):
+        field = self.cmbField.currentText()
+        if field not in self.zhHead:
+            self.add(field, None)
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
@@ -269,10 +298,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if it!=None and it.text()!=None:
             itHead = self.twQuery.horizontalHeaderItem(it.column())
             zhHead = itHead.text()
-            index = self.tableQueryHead[1].index(zhHead)
-            enHead = self.tableQueryHead[0][index]
-            typ = self.tableQueryHead[2][index]
-            self.dlg.add(enHead, zhHead, typ, it.text())
+            self.dlg.add(zhHead, it.text())
 
     def btnClearMsgClicked(self):
         self.txtLoadMsg.clear()
@@ -462,6 +488,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableQueryData = self.bus.selectTableData(self.tableQuery, condition)
         self.tableQueryHead = self.bus.selectTableHead(self.tableQuery)
         self.fillTable(self.twQuery, self.tableQuery, self.tableQueryData, self.tableQueryHead)
+        self.dlg.flushCombobox(self.tableQueryHead)
 
     def fillTableJob(self, table):
         self.tableJob = self.bus.tables()[table]
@@ -469,9 +496,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableJobData = self.bus.selectTableData(self.tableJob)
         self.tableJobHead = self.bus.selectTableHead(self.tableJob)
         self.fillTable(self.twJob, self.tableJob, self.tableJobData, self.tableJobHead)
-
-    #def cmbTableSelected(self, index):
-        #self.fillTableQuery()
 
     def btnRefreshClicked(self):
         self.fillTableQuery(self.tableQueryZh)
