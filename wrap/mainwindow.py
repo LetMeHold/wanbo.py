@@ -200,6 +200,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twQuery.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twQuery.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twQuery.itemDoubleClicked.connect(self.tableQueryItemEdit)
+        self.twQuery.itemSelectionChanged.connect(self.tableQuerySelectionChanged)
 
         self.trQuery.setColumnCount(1)
         self.trQuery.setHeaderHidden(True)
@@ -381,6 +382,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableQuery,id_value,zhHead,old,new))
             else:
                 QMessageBox.critical(self, 'Error', '失败！')
+
+    def tableQuerySelectionChanged(self):
+        items = self.twQuery.selectedItems()
+        lst = []    #保存行号
+        SUM = 0.0
+        for it in items:
+            try:
+                if it.row() not in lst:
+                    lst.append(it.row())
+                SUM += float(it.text())
+            except:
+                continue
+        self.statusbar.showMessage('行数：%d    求和：%.2f' % (len(lst),SUM), 60000)
 
     def tableJobItemEdit(self, item):
         r = item.row()
