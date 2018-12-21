@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from gl import *
 from wrap import *
 import pymysql.cursors

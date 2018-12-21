@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from gl import *
 from wrap.base import *
 from openpyxl import Workbook
 from openpyxl import load_workbook

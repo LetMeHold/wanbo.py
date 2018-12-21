@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
+
 from gl import *
-from ui import *
-from wrap import *
+from wrap import MainWindow
 from PyQt5.QtWidgets import QApplication
 
 app = QApplication(sys.argv)
