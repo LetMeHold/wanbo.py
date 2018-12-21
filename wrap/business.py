@@ -373,12 +373,12 @@ class Business:
             mp['invoice_commission'] = row[12].value
             mp['invoice_type'] = row[13].value
             mp['invoice_paid'] = row[14].value
-            mp['invoice_unpaid'] = row[15].value
-            mp['status'] = row[16].value
-            mp['unpaid_reason'] = row[17].value
-            mp['commission'] = row[18].value
-            mp['commission_date'] = row[19].value
-            mp['remark'] = row[20].value
+            mp['status'] = row[15].value
+            mp['unpaid_reason'] = row[16].value
+            mp['commission'] = row[17].value
+            mp['commission_date'] = row[18].value
+            mp['remark'] = row[19].value
+            mp['invoice_unpaid'] = row[20].value
             self.insertToTable(mp, 'account')
         return self.db.getCount()
     
