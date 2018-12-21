@@ -98,24 +98,26 @@ class Business:
             sql = 'select * from %s' % table
         else:
             sql = 'select * from %s where %s' % (table,condition)
-            GL.LOG.debug(sql)
         return self.db.query(sql)
 
     def updateTableById(self, table, field, tp, value, field_id, value_id):
         sql = 'update %s set %s = %TBD where %s = %d' 
-        if value.strip() == '':
-            sql = sql.replace('%TBD','%s', 1)
-            value = 'NULL'
-        elif tp == 'int':
-            sql = sql.replace('%TBD','%d', 1)
-            value = int(value)
-        elif tp == 'double':
-            sql = sql.replace('%TBD','%.2f', 1)
-            value = float(value)
-        else:
-            sql = sql.replace('%TBD','"%s"', 1)
+        try:
+            if value.strip() == '':
+                sql = sql.replace('%TBD','%s', 1)
+                value = 'NULL'
+            elif tp == 'int':
+                sql = sql.replace('%TBD','%d', 1)
+                value = int(value)
+            elif tp == 'double':
+                sql = sql.replace('%TBD','%.2f', 1)
+                value = float(value)
+            else:
+                sql = sql.replace('%TBD','"%s"', 1)
+        except:
+            return False
         sql = sql % (table,field,value,field_id,value_id)
-        self.db.exec(sql)
+        return self.db.exec(sql)
 
     def insertTable(self, tableZh, itemData):
         table = self.tables()[tableZh]
@@ -123,22 +125,25 @@ class Business:
         sql = self.getInsertTemplates(table, head[0])
         r = 0
         datas = []
-        #编号由数据库自动生成，所以从1开始
-        for c in range(1, len(itemData)):
-            txt = itemData[c]
-            if txt == 'NULL':
-                sql = sql.replace('%TBD','%s', 1)
-            elif head[2][c] == 'int':
-                sql = sql.replace('%TBD','%d', 1)
-                txt = int(txt)
-            elif head[2][c] == 'double':
-                sql = sql.replace('%TBD','%.2f', 1)
-                txt = float(txt)
-            else:
-                sql = sql.replace('%TBD','"%s"', 1)
-            datas.append(txt)
+        try:
+            #编号由数据库自动生成，所以从1开始
+            for c in range(1, len(itemData)):
+                txt = itemData[c]
+                if txt == 'NULL':
+                    sql = sql.replace('%TBD','%s', 1)
+                elif head[2][c] == 'int':
+                    sql = sql.replace('%TBD','%d', 1)
+                    txt = int(txt)
+                elif head[2][c] == 'double':
+                    sql = sql.replace('%TBD','%.2f', 1)
+                    txt = float(txt)
+                else:
+                    sql = sql.replace('%TBD','"%s"', 1)
+                datas.append(txt)
+        except:
+            return False
         sql = sql % tuple(datas)
-        self.db.exec(sql)
+        return self.db.exec(sql)
 
     def getContractAmount(self, alias, condition=None):
         if condition == None:
@@ -307,7 +312,7 @@ class Business:
         keys_sql += ')'
         values_sql += ')'
         sql = 'insert into %s %s values%s' % (table,keys_sql,values_sql)
-        self.db.exec(sql)
+        return self.db.exec(sql)
     
     def ReadBalanceData(self, ws, source):
         n = 0

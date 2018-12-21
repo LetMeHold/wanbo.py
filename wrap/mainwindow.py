@@ -74,7 +74,6 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         except:
             err = '内容类型不匹配'
             GL.LOG.error(err)
-            GL.LOG.debug(value)
             QMessageBox.critical(self, 'Error', err)
 
         self.flushTable()
@@ -297,6 +296,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twDstHead = None
         self.itemDst = None
         self.txtDst = None
+        self.isAdding = False
 
     def btnAdvFilterClicked(self):
         self.dlg.show()
@@ -348,6 +348,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.fillTableQuery(itemNew.text(0))
 
     def tableQueryItemEdit(self, item):
+        if self.isAdding:
+            return
         r = item.row()
         c = item.column()
         if c == 0:
@@ -362,9 +364,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             enHead = self.tableQueryHead[0][c]
             zhHead = self.tableQueryHead[1][c]
             tp = self.tableQueryHead[2][c]
-            item.setText(new)
-            GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableQuery,id_value,zhHead,old,new))
-            self.bus.updateTableById(self.tableQuery, enHead, tp, new, id_enHead, id_value)
+            if self.bus.updateTableById(self.tableQuery, enHead, tp, new, id_enHead, id_value):
+                item.setText(new)
+                GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableQuery,id_value,zhHead,old,new))
+            else:
+                QMessageBox.critical(self, 'Error', '失败！')
 
     def tableJobItemEdit(self, item):
         r = item.row()
@@ -381,9 +385,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             enHead = self.tableJobHead[0][c]
             zhHead = self.tableJobHead[1][c]
             tp = self.tableJobHead[2][c]
-            item.setText(new)
-            GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableJob,id_value,zhHead,old,new))
-            self.bus.updateTableById(self.tableJob, enHead, tp, new, id_enHead, id_value)
+            if self.bus.updateTableById(self.tableJob, enHead, tp, new, id_enHead, id_value):
+                item.setText(new)
+                GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableJob,id_value,zhHead,old,new))
+            else:
+                QMessageBox.critical(self, 'Error', '失败！')
 
     def btnJobCloseClicked(self):
         self.resetTabJob()
@@ -474,10 +480,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         zhHead = self.tableDstHead[1][c]
         tp = self.tableDstHead[2][c]
         old = self.itemDst.text()
-        self.itemDst.setText(self.txtDst)
-        GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableDst,id_value,zhHead,old,self.txtDst))
-        self.bus.updateTableById(self.tableDst, enHead, tp, self.txtDst, id_enHead, id_value)
-        self.twDst.setCurrentItem(self.itemDst)
+        if self.bus.updateTableById(self.tableDst, enHead, tp, self.txtDst, id_enHead, id_value):
+            GL.LOG.info('编辑表格(%s), id(%d)的(%s)由(%s)改为(%s).' % (self.tableDst,id_value,zhHead,old,self.txtDst))
+            self.itemDst.setText(self.txtDst)
+            self.twDst.setCurrentItem(self.itemDst)
+        else:
+            QMessageBox.critical(self, 'Error', '失败！')
 
         self.tableDst = None
         self.twDst = None
@@ -488,6 +496,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def fillTableQuery(self, table):
         if table not in self.bus.tables():
             return
+        self.isAdding = False
         condition = None
         if self.cbFilter.isChecked():
             condition = self.dlg.sql()
@@ -578,6 +587,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.tableQueryZh not in self.bus.tables():
             return
         if self.btnAdd.text() == '新增':
+            self.isAdding = True
             self.twQuery.clearContents()
             self.twQuery.setRowCount(1)
             self.btnAdd.setText('确认新增')
@@ -595,9 +605,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 else:
                     txt = 'NULL'
                 datas.append(txt)
-            self.bus.insertTable(self.tableQueryZh, datas)
-            self.btnAdd.setText('新增')
-            self.btnRefreshClicked()
+            if self.bus.insertTable(self.tableQueryZh, datas):
+                self.btnAdd.setText('新增')
+                self.btnRefreshClicked()
+            else:
+                QMessageBox.critical(self, 'Error', '失败！')
 
     def treeStatsItemActivated(self, itemNew, itemOld):
         if itemNew.text(0) == '应收账款统计':

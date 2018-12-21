@@ -25,7 +25,7 @@ class DB:
         return (self.count_success,self.count_failed)
 
     def exec(self, sql):
-        GL.LOG.debug('sql: ' + sql)
+        #GL.LOG.debug('sql: ' + sql)
         try:
             with self.conn.cursor() as cur:
                 cur.execute(sql)
