@@ -67,12 +67,11 @@ class Business:
         return self._statsBalance
 
     def statsCost(self):
-        if self._statsCost == None:
-            self._statsCost = ['一级类目','二级类目']
-            sql = 'select date_format(date,"%Y-%m")as"月份" from balance where year(date)=year(now()) group by date_format(date,"%Y-%m")'
-            tmp = self.db.query(sql)
-            for t in tmp:
-                self._statsCost.append(t['月份'])
+        self._statsCost = ['一级类目','二级类目']
+        sql = 'select date_format(date,"%Y-%m")as"月份" from balance where year(date)=year(now()) group by date_format(date,"%Y-%m")'
+        tmp = self.db.query(sql)
+        for t in tmp:
+            self._statsCost.append(t['月份'])
         return self._statsCost
 
     def selectTableHead(self, table):
