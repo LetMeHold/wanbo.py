@@ -49,6 +49,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twStats.horizontalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twStats.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         #self.twStats.itemDoubleClicked.connect(self.tableStatsItemEdit)
+        self.twStats.itemSelectionChanged.connect(self.tableStatsSelectionChanged)
 
         self.trStats.setColumnCount(1)
         self.trStats.setHeaderHidden(True)
@@ -163,9 +164,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.txtLoadMsg.append('开票明细，导入：成功 %d, 失败 %d' % (r1,r2))
             else:
                 pass
+        self.bus.closeExcel()
 
     def treeQueryItemActivated(self, itemNew, itemOld):
         self.cbFilter.setChecked(False)
+        self.dlgJob.resetTabJob()
         self.dlgFilter.clear()
         self.fillTableQuery(itemNew.text(0))
 
@@ -194,6 +197,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def tableQuerySelectionChanged(self):
         items = self.twQuery.selectedItems()
+        lst = []    #保存行号
+        SUM = 0.0
+        for it in items:
+            try:
+                if it.row() not in lst:
+                    lst.append(it.row())
+                SUM += float(it.text())
+            except:
+                continue
+        self.statusbar.showMessage('行数：%d    求和：%.2f' % (len(lst),SUM), 60000)
+
+    def tableStatsSelectionChanged(self):
+        items = self.twStats.selectedItems()
         lst = []    #保存行号
         SUM = 0.0
         for it in items:

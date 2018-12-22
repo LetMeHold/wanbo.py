@@ -36,13 +36,15 @@ class Business:
         }
         self._statsInvoice = ['月份','未税金额','税额','含税金额']
         self._statsBalance = ['年份','来源','主营业务收入','其他业务收入','营业外收入','上年度余额转入','年度总收入','支出','结余']
-        self._statsCost = ['一级类目','二级类目']
+        self._statsCost = None
 
     def loadExcel(self, fn):
-        #self.fn = '../../db/wanbo/2018财务汇总表（46周）.xlsx'
         self.fn = fn
         self.wb = load_workbook(fn, read_only=True, data_only=True)
         return self.wb
+
+    def closeExcel(self):
+        self.wb.close()
 
     def __del__(self):
         if self.db != None:
@@ -65,10 +67,12 @@ class Business:
         return self._statsBalance
 
     def statsCost(self):
-        sql = 'select date_format(date,"%Y-%m")as"月份" from balance where year(date)=year(now()) group by date_format(date,"%Y-%m")'
-        tmp = self.db.query(sql)
-        for t in tmp:
-            self._statsCost.append(t['月份'])
+        if self._statsCost == None:
+            self._statsCost = ['一级类目','二级类目']
+            sql = 'select date_format(date,"%Y-%m")as"月份" from balance where year(date)=year(now()) group by date_format(date,"%Y-%m")'
+            tmp = self.db.query(sql)
+            for t in tmp:
+                self._statsCost.append(t['月份'])
         return self._statsCost
 
     def selectTableHead(self, table):
@@ -295,7 +299,7 @@ class Business:
         values_sql = '('
         for k,v in mp.items():
             keys_sql += '%s,' % k
-            if v==None or v=='-' or v=='/':
+            if v==None or v=='-' or v=='/' or v=='?' or v=='？':
                 values_sql += 'NULL,'
             elif isinstance(v, str):
                 if v.strip() == '':
@@ -348,10 +352,8 @@ class Business:
         self.db.resetCount()
         for row in ws.rows:
             n = n + 1
-            if n <= 3:
+            if n <= 4:
                 continue
-            if n == 40:
-                break
             if len(row) < 18:
                 continue
             mp['no'] = row[0].value
@@ -370,15 +372,15 @@ class Business:
             mp['unpaid'] = row[9].value
             mp['debt'] = row[10].value
             mp['percent'] = row[11].value
-            mp['invoice_commission'] = row[12].value
-            mp['invoice_type'] = row[13].value
-            mp['invoice_paid'] = row[14].value
+            mp['invoice_type'] = row[12].value
+            mp['invoice_paid'] = row[13].value
+            mp['invoice_unpaid'] = row[14].value
             mp['status'] = row[15].value
             mp['unpaid_reason'] = row[16].value
             mp['commission'] = row[17].value
             mp['commission_date'] = row[18].value
             mp['remark'] = row[19].value
-            mp['invoice_unpaid'] = row[20].value
+            mp['invoice_commission'] = row[20].value
             self.insertToTable(mp, 'account')
         return self.db.getCount()
     
@@ -390,11 +392,11 @@ class Business:
             n = n + 1
             if n <= 4:
                 continue
-            if n == 10:
-                break
             if len(row) < 18:
                 continue
             mp['contract'] = row[1].value
+            if mp['contract']==None or mp['contract'].strip()=='':
+                continue
             mp['date'] = row[2].value
             mp['seller'] = row[3].value
             mp['client'] = row[4].value
@@ -427,6 +429,8 @@ class Business:
             if len(row) < 16:
                 continue
             mp['contract'] = row[0].value
+            if mp['contract']==None or mp['contract'].strip()=='':
+                continue
             year = row[1].value
             month = row[2].value
             day = row[3].value

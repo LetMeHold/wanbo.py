@@ -74,8 +74,11 @@ class JobDialog(QDialog, Ui_JobDialog):
     def resetTabJob(self):
         self.twJob.clear()
         self.edtFilterJob.clear()
-        #self.tab.removeTab(self.jobTabIndex)
-        #self.tab.setCurrentIndex(0)
+        self.tableDst = None
+        self.twDst = None
+        self.twDstHead = None
+        self.itemDst = None
+        self.txtDst = None
 
     def actJobRelateClicked(self):
         item = self.twJob.currentItem()
