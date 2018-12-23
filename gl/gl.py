@@ -5,9 +5,8 @@ import time
 import traceback
 import json
 
-import sys
 import io
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+#sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
 
 class Global:
 
