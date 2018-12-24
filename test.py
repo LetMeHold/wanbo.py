@@ -9,12 +9,13 @@ from openpyxl import load_workbook
 GL.LOG = getLogger('WanboLoger', 'logs', 'console.log')
 GL.LOG.info('测试')
 
-wb = Workbook()
-ws = wb.active
-row = 0
-col = 0
-ws.cell(row=1,column=1).value = 42
-ws.cell(row=2,column=2).value = 42
+mp = {'a':1,'b':2}
+t = {'a':mp.copy(),'b':mp.copy()}
 
-wb.save('x.xlsx')
+print(t['a']['a'])
+print(t['b']['a'])
+t['a']['a'] += 1
+t['a']['a'] += 1
+print(t['a']['a'])
+print(t['b']['a'])
 

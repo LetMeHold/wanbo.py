@@ -423,7 +423,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             tw = self.twStats
             tw.clear()
             heads = self.bus.statsBalance()
-            (ret, rowCount) = self.bus.getBalanceStats()
+            (ret, rowCount, total) = self.bus.getBalanceStats()
             tw.setColumnCount(len(heads))
             tw.setRowCount(rowCount)
             tw.setHorizontalHeaderLabels(heads)
@@ -434,17 +434,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                     col = 0
                     tw.setItem(row, col, it)
-                    for k2,v2 in v1.items():
-                        it = QTableWidgetItem(str(k2))
-                        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                        col = 1
-                        tw.setItem(row, col, it)
-                        for k3,v3 in v2.items():
-                            it = QTableWidgetItem(str(v3))
+                    for k in v1:
+                        for k2,v2 in k.items():
+                            it = QTableWidgetItem(str(k2))
                             it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                            col = heads.index(k3)
+                            col = 1
                             tw.setItem(row, col, it)
-                        row += 1
+                            for k3,v3 in v2.items():
+                                it = QTableWidgetItem(str(v3))
+                                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                                col = heads.index(k3)
+                                tw.setItem(row, col, it)
+                            row += 1
+                    #合计
+                    it = QTableWidgetItem('合计')
+                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                    it.setFont(QFont('Times', 10, QFont.Black));
+                    col = 1
+                    tw.setItem(row, col, it)
+                    for head,value in total[k1].items():
+                        it = QTableWidgetItem(str(value))
+                        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                        it.setFont(QFont('Times', 10, QFont.Black));
+                        col = heads.index(head)
+                        tw.setItem(row, col, it)
                     row += 1
         elif itemNew.text(0) == '费用统计':
             tw = self.twStats
@@ -595,21 +608,40 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         ws = wb.create_sheet('收支统计')
         heads = self.bus.statsBalance()
-        (ret, rowCount) = self.bus.getBalanceStats()
+        (ret, rowCount, total) = self.bus.getBalanceStats()
         ws.append(heads)
         row = 2
         for l in ret:
             for k1,v1 in l.items():
                 col = 1
                 ws.cell(row=row,column=col).value = k1
-                for k2,v2 in v1.items():
-                    col = 2
-                    ws.cell(row=row,column=col).value = k2
-                    for k3,v3 in v2.items():
-                        col = heads.index(k3) + 1
-                        ws.cell(row=row,column=col).value = v3
-                    row += 1
+                for k in v1:
+                    for k2,v2 in k.items():
+                        col = 2
+                        ws.cell(row=row,column=col).value = k2
+                        for k3,v3 in v2.items():
+                            col = heads.index(k3) + 1
+                            ws.cell(row=row,column=col).value = v3
+                        row += 1
+                #合计
+                col = 2
+                ws.cell(row=row,column=col).value = '合计'
+                for head,value in total[k1].items():
+                    col = heads.index(head) + 1
+                    ws.cell(row=row,column=col).value = value
                 row += 1
+        #for l in ret:
+            #for k1,v1 in l.items():
+                #col = 1
+                #ws.cell(row=row,column=col).value = k1
+                #for k2,v2 in v1.items():
+                    #col = 2
+                    #ws.cell(row=row,column=col).value = k2
+                    #for k3,v3 in v2.items():
+                        #col = heads.index(k3) + 1
+                        #ws.cell(row=row,column=col).value = v3
+                    #row += 1
+                #row += 1
 
         ws = wb.create_sheet('应收账款统计')
         ret = self.bus.getAccountStats()

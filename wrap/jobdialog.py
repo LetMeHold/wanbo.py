@@ -5,7 +5,7 @@ from ui import *
 from wrap.business import *
 from PyQt5.QtWidgets import QMainWindow,QDialog,QTableWidgetItem,QAbstractItemView,QListWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem,QFileDialog
 from PyQt5.QtCore import QDate,Qt
-from PyQt5.QtGui import QIcon,QCursor,QBrush
+from PyQt5.QtGui import QIcon,QCursor,QBrush,QFont
 
 class JobDialog(QDialog, Ui_JobDialog):
     def __init__(self, parent=None, bus=None):
