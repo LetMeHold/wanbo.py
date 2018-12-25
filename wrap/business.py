@@ -12,30 +12,31 @@ class Business:
         self._tables = {'测试':'test','收支明细':'balance','应收账款':'account','合同明细':'contract','开票明细':'invoice'}
         self._stats = ['应收账款统计','开票统计','收支统计','费用统计']
         self._statsAccount = {
-            '今年合同额':{'row':0,'column':0,'form':None},
-            '历年合同额':{'row':0,'column':1,'form':None},
-            '合同总额':{'row':0,'column':2,'form':None},
-            '今年回款额':{'row':2,'column':0,'form':None},
-            '历年回款额':{'row':2,'column':1,'form':None},
-            '回款总额':{'row':2,'column':2,'form':None},
-            '今年未收款额':{'row':4,'column':0,'form':None},
-            '历年未收款额':{'row':4,'column':1,'form':None},
-            '未收款总额':{'row':4,'column':2,'form':None},
-            '正常欠款':{'row':4,'column':3,'form':None},
-            '异常欠款':{'row':4,'column':4,'form':None},
-            '到期欠款':{'row':4,'column':5,'form':None},
-            '今年坏账额':{'row':6,'column':0,'form':None},
-            '历年坏账额':{'row':6,'column':1,'form':None},
-            '坏账总额':{'row':6,'column':2,'form':None},
-            '今年提成额':{'row':8,'column':0,'form':None},
-            '历年提成额':{'row':8,'column':1,'form':None},
-            '提成总额':{'row':8,'column':2,'form':None},
-            '今年合同欠款率':{'row':10,'column':0,'form':'百分比'},
-            '历年合同欠款率':{'row':10,'column':1,'form':'百分比'},
-            '总欠款率':{'row':10,'column':2,'form':'百分比'}
+            '今年合同额':{'row':0,'column':0,'form':'double'},
+            '历年合同额':{'row':0,'column':1,'form':'double'},
+            '合同总额':{'row':0,'column':2,'form':'double'},
+            '今年回款额':{'row':2,'column':0,'form':'double'},
+            '历年回款额':{'row':2,'column':1,'form':'double'},
+            '回款总额':{'row':2,'column':2,'form':'double'},
+            '今年未收款额':{'row':4,'column':0,'form':'double'},
+            '历年未收款额':{'row':4,'column':1,'form':'double'},
+            '未收款总额':{'row':4,'column':2,'form':'double'},
+            '正常欠款':{'row':4,'column':3,'form':'double'},
+            '异常欠款':{'row':4,'column':4,'form':'double'},
+            '到期欠款':{'row':4,'column':5,'form':'double'},
+            '今年坏账额':{'row':6,'column':0,'form':'double'},
+            '历年坏账额':{'row':6,'column':1,'form':'double'},
+            '坏账总额':{'row':6,'column':2,'form':'double'},
+            '今年提成额':{'row':8,'column':0,'form':'double'},
+            '历年提成额':{'row':8,'column':1,'form':'double'},
+            '提成总额':{'row':8,'column':2,'form':'double'},
+            '今年合同欠款率':{'row':10,'column':0,'form':'percent'},
+            '历年合同欠款率':{'row':10,'column':1,'form':'percent'},
+            '总欠款率':{'row':10,'column':2,'form':'percent'}
         }
-        self._statsInvoice = ['月份','未税金额','税额','含税金额']
-        self._statsBalance = ['年份','来源','主营业务收入','其他业务收入','营业外收入','上年度余额转入','年度总收入','支出','结余','利润','年初余额','当前余额','余额增长','增长率']
+        self._statsInvoice = (['月份','未税金额','税额','含税金额'],['str','double','double','double'])
+        self._statsBalance = (['年份','来源','主营业务收入','其他业务收入','营业外收入','上年度余额转入','年度总收入','支出','结余','利润','年初余额','当前余额','余额增长','增长率'],
+                              ['str','str','double','double','double','double','double','double','double','double','double','double','double','percent'])
         self._statsCost = None
 
     def loadExcel(self, fn):
@@ -119,7 +120,7 @@ class Business:
                 value = int(value)
             elif tp == 'double':
                 sql = sql.replace('%TBD','%.2f', 1)
-                value = float(value)
+                value = float(value.replace(',',''))
             else:
                 sql = sql.replace('%TBD','"%s"', 1)
         except:
@@ -144,7 +145,7 @@ class Business:
                     txt = int(txt)
                 elif head[2][c] == 'double':
                     sql = sql.replace('%TBD','%.2f', 1)
-                    txt = float(txt)
+                    txt = float(txt.replace(',',''))
                 else:
                     sql = sql.replace('%TBD','"%s"', 1)
                 datas.append(txt)

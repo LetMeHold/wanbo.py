@@ -74,7 +74,7 @@ class FilterDialog(QDialog, Ui_FilterDialog):
                 elif typ == 'int':
                     value = int(value)
                 elif typ == 'double':
-                    value = float(value)
+                    value = float(value.replace(',',''))
                 self.data[zhHead].append(value)
         except:
             err = '内容类型不匹配'
@@ -135,6 +135,7 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         self.twFilter.clear()
         self.twFilter.setColumnCount(20)
         self.twFilter.setRowCount(15)
+        #先全部初始化为空是为了能双击出发弹框编辑而不是默认编辑
         for r in range(0,self.twFilter.rowCount()):
             for c in range(0,self.twFilter.columnCount()):
                 it = QTableWidgetItem('')
@@ -144,7 +145,11 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         for c in range(0, len(self.zhHead)):
             for r in range(0, len(self.data[self.zhHead[c]])):
                 value = self.data[self.zhHead[c]][r]
-                it = QTableWidgetItem(str(value))
+                if self.typ[c] == 'double':
+                    txt = format(value, ',')
+                else:
+                    txt = str(value)
+                it = QTableWidgetItem(txt)
                 it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                 self.twFilter.setItem(r, c, it)
 

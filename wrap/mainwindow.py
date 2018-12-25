@@ -121,6 +121,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.txtDst = None
         self.isAdding = False
 
+    def createItem(self, value, typ=None, bg=None, font=None):
+        if value == None:
+            value = ''
+        elif typ == 'double':
+            value = format(value, ',')
+        elif typ == 'percent':
+            value = '%.2f%%' % (value*100)
+        else:
+            value = str(value)
+        it = QTableWidgetItem(value)
+        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+        if bg != None:
+            it.setBackground(bg)
+        if font != None:
+            it.setFont(font)
+        return it
+
     def btnAdvFilterClicked(self):
         self.dlgFilter.show()
 
@@ -342,12 +359,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tw.setVisible(False)
         for r in range(0,tw.rowCount()):
             for c in range(0,tw.columnCount()):
-                tmp = data[r][head[0][c]]
-                if tmp == None:
-                    tmp = ''
-                it = QTableWidgetItem(str(tmp))
+                it = self.createItem(data[r][head[0][c]], head[2][c])
                 tw.setItem(r,c,it)
-                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                 tw.setRowHidden(r, False)
         tw.setVisible(True)
 
@@ -426,14 +439,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     continue
                 if v == None:
                     v = 0.0
-                it1 = QTableWidgetItem(str(k))
-                it1.setFlags(it1.flags() & ~Qt.ItemIsEditable)
-                it1.setBackground(QBrush(Qt.lightGray))
-                if struct[k]['form'] == '百分比':
-                    it2 = QTableWidgetItem('%.2f%%' % (v*100))
-                else:
-                    it2 = QTableWidgetItem(str(v))
-                it2.setFlags(it2.flags() & ~Qt.ItemIsEditable)
+                it1 = self.createItem(k, bg=QBrush(Qt.lightGray))
+                it2 = self.createItem(v, struct[k]['form'])
                 row = struct[k]['row']
                 col = struct[k]['column']
                 tw.setItem(row, col, it1)
@@ -441,7 +448,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif itemNew.text(0) == '开票统计':
             tw = self.twStats
             tw.clear()
-            heads = self.bus.statsInvoice()
+            (heads,typs) = self.bus.statsInvoice()
             ret = self.bus.getInvoiceStats()
             tw.setColumnCount(len(heads))
             tw.setRowCount(len(ret))
@@ -452,17 +459,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     if v == None:
                         v = 0.0
                     col = heads.index(k)
-                    it = QTableWidgetItem(str(v))
-                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                    it = self.createItem(v, typs[col])
                     tw.setItem(row, col, it)
-                it = QTableWidgetItem(str(v))
-                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                tw.setItem(row, col, it)
                 row += 1
         elif itemNew.text(0) == '收支统计':
             tw = self.twStats
             tw.clear()
-            heads = self.bus.statsBalance()
+            (heads,typs) = self.bus.statsBalance()
             (ret, rowCount, total) = self.bus.getBalanceStats()
             tw.setColumnCount(len(heads))
             tw.setRowCount(rowCount)
@@ -470,33 +473,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             row = 0
             for l in ret:
                 for k1,v1 in l.items():
-                    it = QTableWidgetItem(str(k1))
-                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                     col = 0
+                    it = self.createItem(k1, typs[col])
                     tw.setItem(row, col, it)
                     for k in v1:
                         for k2,v2 in k.items():
-                            it = QTableWidgetItem(str(k2))
-                            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                             col = 1
+                            it = self.createItem(k2, typs[col])
                             tw.setItem(row, col, it)
                             for k3,v3 in v2.items():
-                                it = QTableWidgetItem(str(v3))
-                                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                                 col = heads.index(k3)
+                                it = self.createItem(v3, typs[col])
                                 tw.setItem(row, col, it)
                             row += 1
                     #合计
-                    it = QTableWidgetItem('合计')
-                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                    it.setFont(QFont('Times', 10, QFont.Black));
                     col = 1
+                    it = self.createItem('合计', 'str', font=QFont('Times',10,QFont.Black))
                     tw.setItem(row, col, it)
                     for head,value in total[k1].items():
-                        it = QTableWidgetItem(str(value))
-                        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                        it.setFont(QFont('Times', 10, QFont.Black));
                         col = heads.index(head)
+                        it = self.createItem(value, typs[col], font=QFont('Times',10,QFont.Black))
                         tw.setItem(row, col, it)
                     row += 1
         elif itemNew.text(0) == '费用统计':
@@ -510,19 +506,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             #总费用
             row = 0
             col = 0
-            it = QTableWidgetItem('总费用汇总')
-            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-            it.setBackground(QBrush(Qt.lightGray))
+            it = self.createItem('总费用汇总', 'str', bg=QBrush(Qt.lightGray))
             tw.setItem(row, col, it)
             for p in ret['总费用汇总']['费用']:
                 mon = p['月份']
                 cost = p['费用']
                 if cost == None:
                     cost = 0.0
-                it = QTableWidgetItem(str(cost))
-                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                it.setBackground(QBrush(Qt.lightGray))
                 col = heads.index(mon)
+                it = self.createItem(cost, 'double', bg=QBrush(Qt.lightGray))
                 tw.setItem(row, col, it)
             #一级和二级类目
             row = 1
@@ -530,10 +522,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if class1 == '总费用汇总':
                     continue
                 #一级类目
-                it = QTableWidgetItem(str(class1))
-                it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                it.setBackground(QBrush(Qt.lightGray))
                 col = 0
+                it = self.createItem(class1, 'str', bg=QBrush(Qt.lightGray))
                 tw.setItem(row, col, it)
                 #一级类目的费用
                 if '费用' in v1:
@@ -542,18 +532,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         cost = p1['费用']
                         if cost == None:
                             cost = 0.0
-                        it = QTableWidgetItem(str(cost))
-                        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-                        it.setBackground(QBrush(Qt.lightGray))
                         col = heads.index(mon)
+                        it = self.createItem(cost, 'double', bg=QBrush(Qt.lightGray))
                         tw.setItem(row, col, it)
                 #二级类目
                 if '二级类目' in v1:
                     for class2,v2 in v1['二级类目'].items():
-                        it = QTableWidgetItem(str(class2))
-                        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                         row += 1
                         col = 1
+                        it = self.createItem(class2, 'str')
                         tw.setItem(row, col, it)
                         #二级类目的费用
                         for p2 in v2:
@@ -561,12 +548,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                             cost = p2['费用']
                             if cost == None:
                                 cost = 0.0
-                            it = QTableWidgetItem(str(cost))
-                            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
                             col = heads.index(mon)
+                            it = self.createItem(cost, 'double')
                             tw.setItem(row, col, it)
                 row += 1
-            #处理空表格
+            #处理空表格，禁止编辑，填充空字符串
             for r in range(0, tw.rowCount()):
                 for c in range(0, tw.columnCount()):
                     it = tw.item(r, c)
@@ -582,7 +568,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         tw.setItem(r, c, it)
         else:
             pass
-
 
     def actStatsExportClicked(self):
         wb = Workbook()
@@ -634,9 +619,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         col = heads.index(mon) + 1
                         ws.cell(row=row,column=col).value = cost
             row += 1
+        #处理空表格，填充0
+        for r in ws.rows:
+            for cell in r:
+                if cell==None or cell.value==None or cell.value=='':
+                    if cell.col_idx > 2:
+                        cell.value = 0.0
 
         ws = wb.create_sheet('开票统计')
-        heads = self.bus.statsInvoice()
+        (heads,typs) = self.bus.statsInvoice()
         ret = self.bus.getInvoiceStats()
         ws.append(heads)
         row = 2
@@ -647,7 +638,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             row += 1
 
         ws = wb.create_sheet('收支统计')
-        heads = self.bus.statsBalance()
+        (heads,typs) = self.bus.statsBalance()
         (ret, rowCount, total) = self.bus.getBalanceStats()
         ws.append(heads)
         row = 2
@@ -693,7 +684,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 v = 0.0
             cell1 = k
             cell2 = None
-            if struct[k]['form'] == '百分比':
+            if struct[k]['form'] == 'percent':
                 cell2 = '%.2f%%' % (v*100)
             else:
                 cell2 = v
