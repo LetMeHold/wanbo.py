@@ -143,25 +143,43 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for ws in wb:
             if ws.title=='现金账户1明细账' and self.cb1.isChecked():
                 source = '平安银行（姚洋）'
-                (r1,r2) = self.bus.ReadBalanceData(ws, source)
-                self.txtLoadMsg.append('平安银行（姚洋），导入：成功 %d, 失败 %d' % (r1,r2))
+                ret = self.bus.ReadBalanceData(ws, source)
+                if ret == False:
+                    QMessageBox.critical(self, 'Error', GL.ERR)
+                else:
+                    self.txtLoadMsg.append('%s，导入：成功 %d, 失败 %d' % (source,ret[0],ret[1]))
             elif ws.title=='现金账户2明细账' and self.cb2.isChecked():
                 source = '平安银行（李昱平）'
-                (r1,r2) = self.bus.ReadBalanceData(ws, source)
-                self.txtLoadMsg.append('平安银行（李昱平），导入：成功 %d, 失败 %d' % (r1,r2))
+                ret = self.bus.ReadBalanceData(ws, source)
+                if ret == False:
+                    QMessageBox.critical(self, 'Error', GL.ERR)
+                else:
+                    self.txtLoadMsg.append('%s，导入：成功 %d, 失败 %d' % (source,ret[0],ret[1]))
             elif ws.title=='银行明细账' and self.cb3.isChecked():
                 source = '建设银行（基本户）'
-                (r1,r2) = self.bus.ReadBalanceData(ws, source)
-                self.txtLoadMsg.append('建设银行（基本户），导入：成功 %d, 失败 %d' % (r1,r2))
+                ret = self.bus.ReadBalanceData(ws, source)
+                if ret == False:
+                    QMessageBox.critical(self, 'Error', GL.ERR)
+                else:
+                    self.txtLoadMsg.append('%s，导入：成功 %d, 失败 %d' % (source,ret[0],ret[1]))
             elif ws.title=='应收账款汇总表' and self.cb4.isChecked():
-                (r1,r2) = self.bus.ReadAccountData(ws)
-                self.txtLoadMsg.append('应收账款，导入：成功 %d, 失败 %d' % (r1,r2))
+                ret = self.bus.ReadAccountData(ws)
+                if ret == False:
+                    QMessageBox.critical(self, 'Error', GL.ERR)
+                else:
+                    self.txtLoadMsg.append('应收账款，导入：成功 %d, 失败 %d' % (ret[0],ret[1]))
             elif ws.title=='合同明细' and self.cb5.isChecked():
-                (r1,r2) = self.bus.ReadContractData(ws)
-                self.txtLoadMsg.append('合同明细，导入：成功 %d, 失败 %d' % (r1,r2))
+                ret = self.bus.ReadContractData(ws)
+                if ret == False:
+                    QMessageBox.critical(self, 'Error', GL.ERR)
+                else:
+                    self.txtLoadMsg.append('合同明细，导入：成功 %d, 失败 %d' % (ret[0],ret[1]))
             elif ws.title=='开票明细表' and self.cb6.isChecked():
-                (r1,r2) = self.bus.ReadInvoiceData(ws)
-                self.txtLoadMsg.append('开票明细，导入：成功 %d, 失败 %d' % (r1,r2))
+                ret = self.bus.ReadInvoiceData(ws)
+                if ret == False:
+                    QMessageBox.critical(self, 'Error', GL.ERR)
+                else:
+                    self.txtLoadMsg.append('开票明细，导入：成功 %d, 失败 %d' % (ret[0],ret[1]))
             else:
                 pass
         self.bus.closeExcel()

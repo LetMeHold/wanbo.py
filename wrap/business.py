@@ -325,7 +325,7 @@ class Business:
         sql = 'select * from test'
         print(self.db.query(sql))
     
-    def insertToTable(self, mp, table):
+    def insertToTable(self, mp, table, commit=True):
         keys_sql = '('
         values_sql = '('
         for k,v in mp.items():
@@ -346,140 +346,188 @@ class Business:
         keys_sql += ')'
         values_sql += ')'
         sql = 'insert into %s %s values%s' % (table,keys_sql,values_sql)
-        return self.db.exec(sql)
+        return self.db.exec(sql, commit)
     
     def ReadBalanceData(self, ws, source):
         n = 0
         mp = {}
         self.db.resetCount()
-        for row in ws.rows:
-            n = n + 1
-            if n <= 3:
-                continue
-            if len(row) < 10:
-                continue
-            mp['class1'] = row[0].value
-            if mp['class1']==None or mp['class1'].strip()=='':
-                continue
-            mp['class2'] = row[1].value
-            year = row[2].value
-            month = row[3].value
-            day = row[4].value
-            mp['date'] = '%d-%d-%d' % (year,month,day)
-            mp['abstract'] = row[5].value
-            mp['income'] = row[6].value
-            mp['pay'] = row[7].value
-            mp['balance'] = row[8].value
-            mp['type'] = row[9].value
-            mp['credence'] = row[10].value
-            mp['remark'] = row[11].value
-            mp['source'] = source
-            self.insertToTable(mp, 'balance')
-        return self.db.getCount()
+        ok = True
+        try:
+            for row in ws.rows:
+                n = n + 1
+                if n <= 3:
+                    continue
+                if len(row) < 10:
+                    continue
+                mp['class1'] = row[0].value
+                if mp['class1']==None or mp['class1'].strip()=='':
+                    continue
+                mp['class2'] = row[1].value
+                year = row[2].value
+                month = row[3].value
+                day = row[4].value
+                mp['date'] = '%d-%d-%d' % (year,month,day)
+                mp['abstract'] = row[5].value
+                mp['income'] = row[6].value
+                mp['pay'] = row[7].value
+                mp['balance'] = row[8].value
+                mp['type'] = row[9].value
+                mp['credence'] = row[10].value
+                mp['remark'] = row[11].value
+                mp['source'] = source
+                if self.insertToTable(mp, 'balance', False) == False:
+                    ok = False
+                    break
+        except:
+            ok = False
+        if ok == False:
+            self.db.rollback()
+            GL.setErr('导入 %s 第 %d 行时报错！' % (ws.title,n))
+            return False
+        else:
+            self.db.commit()
+            return self.db.getCount()
     
     def ReadAccountData(self, ws):
         n = 0
         mp = {}
         self.db.resetCount()
-        for row in ws.rows:
-            n = n + 1
-            if n <= 4:
-                continue
-            if len(row) < 18:
-                continue
-            mp['no'] = row[0].value
-            year = row[1].value
-            if isinstance(mp['no'],int)==False or isinstance(year,int)==False:
-                continue
-            del mp['no']
-            month = row[2].value
-            day = row[3].value
-            mp['date'] = '%d-%d-%d' % (year,month,day)
-            mp['seller'] = row[4].value
-            mp['contract'] = row[5].value
-            mp['client'] = row[6].value
-            mp['amount'] = row[7].value
-            mp['paid'] = row[8].value
-            mp['unpaid'] = row[9].value
-            mp['debt'] = row[10].value
-            mp['percent'] = row[11].value
-            mp['invoice_type'] = row[12].value
-            mp['invoice_paid'] = row[13].value
-            mp['invoice_unpaid'] = row[14].value
-            mp['status'] = row[15].value
-            mp['unpaid_reason'] = row[16].value
-            mp['commission'] = row[17].value
-            mp['commission_date'] = row[18].value
-            mp['remark'] = row[19].value
-            mp['invoice_commission'] = row[20].value
-            self.insertToTable(mp, 'account')
-        return self.db.getCount()
+        ok = True
+        try:
+            for row in ws.rows:
+                n = n + 1
+                if n <= 4:
+                    continue
+                if len(row) < 18:
+                    continue
+                mp['no'] = row[0].value
+                if mp['no']==None or isinstance(mp['no'],int)==False:
+                    continue
+                del mp['no']
+                year = row[1].value
+                month = row[2].value
+                day = row[3].value
+                mp['date'] = '%d-%d-%d' % (year,month,day)
+                mp['seller'] = row[4].value
+                mp['contract'] = row[5].value
+                mp['client'] = row[6].value
+                mp['amount'] = row[7].value
+                mp['paid'] = row[8].value
+                mp['unpaid'] = row[9].value
+                mp['debt'] = row[10].value
+                mp['percent'] = row[11].value
+                mp['invoice_type'] = row[12].value
+                mp['invoice_paid'] = row[13].value
+                mp['invoice_unpaid'] = row[14].value
+                mp['status'] = row[15].value
+                mp['unpaid_reason'] = row[16].value
+                mp['commission'] = row[17].value
+                mp['commission_date'] = row[18].value
+                mp['remark'] = row[19].value
+                mp['invoice_commission'] = row[20].value
+                if self.insertToTable(mp, 'account', False) == False:
+                    ok = False
+                    break
+        except:
+            ok = False
+        if ok == False:
+            self.db.rollback()
+            GL.setErr('导入 %s 第 %d 行时报错！' % (ws.title,n))
+            return False
+        else:
+            self.db.commit()
+            return self.db.getCount()
     
     def ReadContractData(self, ws):
         n = 0
         mp = {}
         self.db.resetCount()
-        for row in ws.rows:
-            n = n + 1
-            if n <= 4:
-                continue
-            if len(row) < 18:
-                continue
-            mp['contract'] = row[1].value
-            if mp['contract']==None or mp['contract'].strip()=='':
-                continue
-            mp['date'] = row[2].value
-            mp['seller'] = row[3].value
-            mp['client'] = row[4].value
-            mp['product'] = row[5].value
-            mp['model'] = row[6].value
-            mp['unit'] = row[7].value
-            mp['quantity'] = row[8].value
-            mp['price'] = row[9].value
-            mp['count'] = row[10].value
-            mp['amount'] = row[11].value
-            mp['tax_rate'] = row[12].value
-            mp['date_plan'] = row[13].value
-            mp['date_actual'] = row[14].value
-            mp['ontime'] = row[15].value
-            mp['ontime_whynot'] = row[16].value
-            mp['project'] = row[17].value
-            mp['province'] = row[18].value
-            mp['remark'] = row[19].value
-            self.insertToTable(mp, 'contract')
-        return self.db.getCount()
+        ok = True
+        try:
+            for row in ws.rows:
+                n = n + 1
+                if n <= 4:
+                    continue
+                if len(row) < 18:
+                    continue
+                mp['contract'] = row[1].value
+                if mp['contract']==None or mp['contract'].strip()=='':
+                    continue
+                mp['date'] = row[2].value
+                mp['seller'] = row[3].value
+                mp['client'] = row[4].value
+                mp['product'] = row[5].value
+                mp['model'] = row[6].value
+                mp['unit'] = row[7].value
+                mp['quantity'] = row[8].value
+                mp['price'] = row[9].value
+                mp['count'] = row[10].value
+                mp['amount'] = row[11].value
+                mp['tax_rate'] = row[12].value
+                mp['date_plan'] = row[13].value
+                mp['date_actual'] = row[14].value
+                mp['ontime'] = row[15].value
+                mp['ontime_whynot'] = row[16].value
+                mp['project'] = row[17].value
+                mp['province'] = row[18].value
+                mp['remark'] = row[19].value
+                if self.insertToTable(mp, 'contract', False) == False:
+                    ok = False
+                    break
+        except:
+            ok = False
+        if ok == False:
+            self.db.rollback()
+            GL.setErr('导入 %s 第 %d 行时报错！' % (ws.title,n))
+            return False
+        else:
+            self.db.commit()
+            return self.db.getCount()
     
     def ReadInvoiceData(self, ws):
         n = 0
         mp = {}
         self.db.resetCount()
-        for row in ws.rows:
-            n = n + 1
-            if n <= 2:
-                continue
-            if len(row) < 16:
-                continue
-            mp['contract'] = row[0].value
-            if mp['contract']==None or mp['contract'].strip()=='':
-                continue
-            year = row[1].value
-            month = row[2].value
-            day = row[3].value
-            mp['date'] = '%d-%d-%d' % (year,month,day)
-            mp['invoice_no'] = row[4].value
-            mp['invoice_client'] = row[5].value
-            mp['invoice_content'] = row[6].value
-            mp['model'] = row[7].value
-            mp['quantity'] = row[8].value
-            mp['price'] = row[9].value
-            mp['price_notax'] = row[10].value
-            mp['tax'] = row[11].value
-            mp['amount'] = row[12].value
-            mp['invoice_amount'] = row[13].value
-            mp['invoice_type'] = row[14].value
-            mp['status'] = row[15].value
-            mp['refund'] = row[16].value
-            mp['remark'] = row[17].value
-            self.insertToTable(mp, 'invoice')
-        return self.db.getCount()
+        ok = True
+        try:
+            for row in ws.rows:
+                n = n + 1
+                if n <= 2:
+                    continue
+                if len(row) < 16:
+                    continue
+                mp['contract'] = row[0].value
+                if mp['contract']==None or mp['contract'].strip()=='':
+                    continue
+                year = row[1].value
+                month = row[2].value
+                day = row[3].value
+                mp['date'] = '%d-%d-%d' % (year,month,day)
+                mp['invoice_no'] = row[4].value
+                mp['invoice_client'] = row[5].value
+                mp['invoice_content'] = row[6].value
+                mp['model'] = row[7].value
+                mp['quantity'] = row[8].value
+                mp['price'] = row[9].value
+                mp['price_notax'] = row[10].value
+                mp['tax'] = row[11].value
+                mp['amount'] = row[12].value
+                mp['invoice_amount'] = row[13].value
+                mp['invoice_type'] = row[14].value
+                mp['status'] = row[15].value
+                mp['refund'] = row[16].value
+                mp['remark'] = row[17].value
+                if self.insertToTable(mp, 'invoice', False) == False:
+                    ok = False
+                    break
+        except:
+            ok = False
+        if ok == False:
+            self.db.rollback()
+            GL.setErr('导入 %s 第 %d 行时报错！' % (ws.title,n))
+            return False
+        else:
+            self.db.commit()
+            return self.db.getCount()
 
