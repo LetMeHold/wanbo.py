@@ -46,6 +46,12 @@ class Business:
     def closeExcel(self):
         self.wb.close()
 
+    def commit(self):
+        self.db.commit()
+
+    def rollback(self):
+        self.db.rollback()
+
     def __del__(self):
         if self.db != None:
             del self.db
@@ -121,7 +127,7 @@ class Business:
         sql = sql % (table,field,value,field_id,value_id)
         return self.db.exec(sql)
 
-    def insertTable(self, tableZh, itemData):
+    def insertTable(self, tableZh, itemData, commit=True):
         table = self.tables()[tableZh]
         head = self.selectTableHead(table)
         sql = self.getInsertTemplates(table, head[0])
@@ -145,7 +151,7 @@ class Business:
         except:
             return False
         sql = sql % tuple(datas)
-        return self.db.exec(sql)
+        return self.db.exec(sql, commit)
 
     def getContractAmount(self, alias, condition=None):
         if condition == None:

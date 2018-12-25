@@ -24,17 +24,25 @@ class DB:
     def getCount(self):
         return (self.count_success,self.count_failed)
 
-    def exec(self, sql):
+    def commit(self):
+        self.conn.commit()
+
+    def rollback(self):
+        self.conn.rollback()
+
+    def exec(self, sql, commit=True):
         #GL.LOG.debug('sql: ' + sql)
         try:
             with self.conn.cursor() as cur:
                 cur.execute(sql)
-                self.conn.commit()
+                if commit:
+                    self.conn.commit()
                 self.count_success += 1
                 return True
         except:
             self.count_failed += 1
             GL.LOG.error('在数据库(%s)执行语句(%s)失败\n%s' % (self.name,sql,traceback.format_exc()))
+            self.conn.rollback()
             return False
 
     def query(self, sql):

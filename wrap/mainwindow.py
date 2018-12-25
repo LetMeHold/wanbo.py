@@ -334,32 +334,54 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tw.setVisible(True)
 
     def btnAddClicked(self):
+        rowCount = 30
         if self.tableQueryZh not in self.bus.tables():
             return
         if self.btnAdd.text() == '新增':
             self.isAdding = True
             self.twQuery.clearContents()
-            self.twQuery.setRowCount(1)
+            self.twQuery.setRowCount(rowCount)
             self.btnAdd.setText('确认新增')
         else:
-            datas = []
-            r = 0
-            for c in range(0,self.twQuery.columnCount()):
-                it = self.twQuery.item(r, c)
-                txt = None
-                #表格为空或都是空格就以None处理
-                if it != None:
-                    txt = it.text()
-                    if txt.strip() == '':
+            colCount = self.twQuery.columnCount()
+            rows = []
+            #寻找有效输入的行
+            for r in range(0, rowCount):
+                n = 0
+                for c in range(0,colCount):
+                    it = self.twQuery.item(r, c)
+                    if it != None:
+                        n += 1
+                if n >= 2:
+                    rows.append(r)
+            #执行新增sql，但不提交
+            ok = True
+            row = 0
+            for r in rows:
+                datas = []
+                for c in range(0,colCount):
+                    it = self.twQuery.item(r, c)
+                    txt = None
+                    #表格为空或都是空格就以None处理
+                    if it != None:
+                        txt = it.text()
+                        if txt.strip() == '':
+                            txt = 'NULL'
+                    else:
                         txt = 'NULL'
-                else:
-                    txt = 'NULL'
-                datas.append(txt)
-            if self.bus.insertTable(self.tableQueryZh, datas):
+                    datas.append(txt)
+                if self.bus.insertTable(self.tableQueryZh, datas, False) == False:
+                    ok = False
+                    row = r + 1
+                    break
+            #无报错，提交
+            if ok:
+                self.bus.commit()
                 self.btnAdd.setText('新增')
                 self.btnRefreshClicked()
-            else:
-                QMessageBox.critical(self, 'Error', '失败！')
+            else:   #有报错，回滚
+                self.bus.rollback()
+                QMessageBox.critical(self, 'Error', '失败，第 %d 行输入有误！' % row)
 
     def treeStatsItemActivated(self, itemNew, itemOld):
         if itemNew.text(0) == '应收账款统计':
@@ -630,18 +652,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     col = heads.index(head) + 1
                     ws.cell(row=row,column=col).value = value
                 row += 1
-        #for l in ret:
-            #for k1,v1 in l.items():
-                #col = 1
-                #ws.cell(row=row,column=col).value = k1
-                #for k2,v2 in v1.items():
-                    #col = 2
-                    #ws.cell(row=row,column=col).value = k2
-                    #for k3,v3 in v2.items():
-                        #col = heads.index(k3) + 1
-                        #ws.cell(row=row,column=col).value = v3
-                    #row += 1
-                #row += 1
 
         ws = wb.create_sheet('应收账款统计')
         ret = self.bus.getAccountStats()
