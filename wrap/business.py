@@ -175,6 +175,9 @@ class Business:
             tmp['未税金额'] += ret[i]['未税金额']
             tmp['税额'] += ret[i]['税额']
             tmp['含税金额'] += ret[i]['含税金额']
+        for k,v in tmp.items():
+            if isinstance(v, float):
+                tmp[k] = round(v, 2)
         ret.append(tmp)
         return ret
 

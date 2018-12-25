@@ -17,6 +17,7 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         self.twFilter.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         #self.twFilter.setEditTriggers(QAbstractItemView.NoEditTriggers);
         self.twFilter.itemDoubleClicked.connect(self.tableFilterItemEdit)
+        self.twFilter.currentItemChanged.connect(self.tableFilterCurrentItemChanged)
         self.menuTwFilter = QMenu(self)
 
         self.actDel = QAction(self)
@@ -37,6 +38,7 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         self.actFlush.triggered.connect(self.actFlushClicked)
 
         self.btnAddField.clicked.connect(self.btnAddFieldClicked)
+        self.cbNotIn.stateChanged.connect(self.cbNotInStateChanged)
 
         self.rbDay.setChecked(True)
 
@@ -44,6 +46,8 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         self.enHead = []
         self.typ = []
         self.data = {}
+        self.notin = {}
+        self.respond = True
         self.fullHead = None
 
     def twFilterMenu(self):
@@ -55,6 +59,34 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         self.enHead.clear()
         self.typ.clear()
         self.data.clear()
+        self.notin.clear()
+
+    def tableFilterCurrentItemChanged(self, new, old):
+        if new == None:
+            return
+        col = new.column()
+        it = self.twFilter.horizontalHeaderItem(col)
+        self.respond = False
+        if it != None:
+            if it.text() in self.notin:
+                self.cbNotIn.setChecked(True)
+            else:
+                self.cbNotIn.setChecked(False)
+        else:
+            self.cbNotIn.setChecked(False)
+        self.respond = True
+
+    def cbNotInStateChanged(self, state):
+        if self.respond == False:
+            return
+        it = self.twFilter.currentItem()
+        it_h = self.twFilter.horizontalHeaderItem(it.column())
+        if it==None or it_h==None:
+            return
+        if self.cbNotIn.isChecked():
+            self.notin[it_h.text()] = True
+        else:
+            self.notin[it_h.text()] = False
 
     def add(self, zhHead, value):
         index = self.fullHead[1].index(zhHead)
@@ -95,8 +127,10 @@ class FilterDialog(QDialog, Ui_FilterDialog):
             r = it.row()
             c = it.column()
             del self.data[self.zhHead[c]][r]
-            self.twFilter.setItem(it.row(), it.column(), None)
-            self.flushTable()
+            if len(self.data[self.zhHead[c]]) == 0:
+                self.actDelColClicked()
+            else:
+                self.flushTable()
 
     def actDelColClicked(self):
         c = self.twFilter.currentColumn()
@@ -121,14 +155,22 @@ class FilterDialog(QDialog, Ui_FilterDialog):
                     field = 'date_format(%s,"%%Y-%%m")' % field
                 elif self.rbYear.isChecked():
                     field = 'date_format(%s,"%%Y")' % field
+            notin = ''
+            orand = 'or'
+            if self.zhHead[n] in self.notin and self.notin[self.zhHead[n]]:
+                notin = 'not'
+                orand = 'and'
             if '空' in self.data[self.zhHead[n]]:
-                sql += '(%s is null or %s in %s) and ' % (self.enHead[n],field,self.data[self.zhHead[n]])
+                sql += '(%s is %s null %s %s %s in %s) and ' % (self.enHead[n],notin,orand,field,notin,self.data[self.zhHead[n]])
             else:
-                sql += '%s in %s and ' % (field,self.data[self.zhHead[n]])
+                sql += '%s %s in %s and ' % (field,notin,self.data[self.zhHead[n]])
         sql = sql.rstrip(' and ')
         sql = sql.replace('[', '(')
         sql = sql.replace(']', ')')
-        sql = sql.replace(', \'空\'', '')
+        #sql = sql.replace(', \'空\'', '')
+        #sql = sql.replace('\'空\',', '')
+        #sql = sql.replace('\'空\'', '')
+        sql = sql.replace('空', '')
         return sql
 
     def flushTable(self):
@@ -145,7 +187,7 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         for c in range(0, len(self.zhHead)):
             for r in range(0, len(self.data[self.zhHead[c]])):
                 value = self.data[self.zhHead[c]][r]
-                if self.typ[c] == 'double':
+                if self.typ[c]=='double' and value!='空':
                     txt = format(value, ',')
                 else:
                     txt = str(value)
@@ -179,3 +221,4 @@ class FilterDialog(QDialog, Ui_FilterDialog):
         field = self.cmbField.currentText()
         if field not in self.zhHead:
             self.add(field, None)
+

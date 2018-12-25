@@ -29,6 +29,10 @@ class Ui_FilterDialog(object):
         self.btnAddField.setMinimumSize(QtCore.QSize(0, 25))
         self.btnAddField.setObjectName("btnAddField")
         self.horizontalLayout.addWidget(self.btnAddField)
+        self.cbNotIn = QtWidgets.QCheckBox(FilterDialog)
+        self.cbNotIn.setMinimumSize(QtCore.QSize(0, 25))
+        self.cbNotIn.setObjectName("cbNotIn")
+        self.horizontalLayout.addWidget(self.cbNotIn)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
         self.label = QtWidgets.QLabel(FilterDialog)
@@ -57,6 +61,7 @@ class Ui_FilterDialog(object):
         _translate = QtCore.QCoreApplication.translate
         FilterDialog.setWindowTitle(_translate("FilterDialog", "高级筛选"))
         self.btnAddField.setText(_translate("FilterDialog", "添加"))
+        self.cbNotIn.setText(_translate("FilterDialog", "不包含"))
         self.label.setText(_translate("FilterDialog", "日期匹配："))
         self.rbYear.setText(_translate("FilterDialog", "年"))
         self.rbMonth.setText(_translate("FilterDialog", "月"))
