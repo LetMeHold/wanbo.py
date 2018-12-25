@@ -19,7 +19,7 @@ executables = [
 ]
 
 setup(name='wanbo',
-      version='0.3',
+      version='0.4',
       description='wanbo system',
       options=options,
       executables=executables
