@@ -238,10 +238,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             try:
                 if it.row() not in lst:
                     lst.append(it.row())
-                SUM += float(it.text())
+                SUM += float(it.text().replace(',',''))
             except:
                 continue
-        self.statusbar.showMessage('行数：%d    求和：%.2f' % (len(lst),SUM), 60000)
+        SUM = round(SUM, 2)
+        self.statusbar.showMessage('行数：%d    求和：%s' % (len(lst),format(SUM,',')), 60000)
 
     def tableStatsSelectionChanged(self):
         items = self.twStats.selectedItems()
@@ -251,10 +252,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             try:
                 if it.row() not in lst:
                     lst.append(it.row())
-                SUM += float(it.text())
+                SUM += float(it.text().replace(',',''))
             except:
                 continue
-        self.statusbar.showMessage('行数：%d    求和：%.2f' % (len(lst),SUM), 60000)
+        SUM = round(SUM, 2)
+        self.statusbar.showMessage('行数：%d    求和：%s' % (len(lst),format(SUM,',')), 60000)
 
     def tableQueryMenu(self, pos):
         self.actQryRelateAccount.setVisible(False)
