@@ -3,6 +3,7 @@
 from wrap.business import *
 from wrap.filterdialog import *
 from wrap.jobdialog import JobDialog
+from PyQt5.QtWidgets import QApplication
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
@@ -12,6 +13,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowIcon(QIcon('res/logo.ico'))
         GL.LOG = getLogger('WanboLoger', 'logs', 'console.log')
         GL.LOG.info('主程序启动')
+        self.clipboard = QApplication.clipboard()
         self.bus = Business()
         self.init()
 
@@ -105,6 +107,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnClearMsg.clicked.connect(self.btnClearMsgClicked)
         self.btnAdvFilter.clicked.connect(self.btnAdvFilterClicked)
 
+        QShortcut(QKeySequence('Ctrl+c'), self, self.tableQueryCopy)
+        QShortcut(QKeySequence('Ctrl+v'), self, self.tableQueryPaste)
+
         #更多需要初始化的内容
         self.dlgFilter = FilterDialog(self)
         self.dlgJob = JobDialog(self, self.bus)
@@ -121,7 +126,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.txtDst = None
         self.isAdding = False
 
-    def createItem(self, value, typ=None, bg=None, font=None):
+    def createItem(self, value, typ=None, bg=None, font=None, editable=False):
         if value == None:
             value = ''
         elif typ == 'double':
@@ -131,12 +136,54 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             value = str(value)
         it = QTableWidgetItem(value)
-        it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+        if editable == False:
+            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
         if bg != None:
             it.setBackground(bg)
         if font != None:
             it.setFont(font)
         return it
+
+    def tableQueryCopy(self):
+        ranges = self.twQuery.selectedRanges()
+        if len(ranges) == 0:
+            return
+        ss = ''
+        rg = ranges[0]  #目前不支持同时复制黏贴多个区域
+        for r in range(rg.topRow(), rg.bottomRow()+1):
+            for c in range(rg.leftColumn(), rg.rightColumn()+1):
+                it = self.twQuery.item(r, c)
+                ss += '%s\t' % it.text()
+            ss = ss.rstrip('\t')
+            ss += '\n'
+        self.clipboard.setText(ss)
+
+    def tableQueryPaste(self):
+        if self.isAdding == False:
+            return
+        ranges = self.twQuery.selectedRanges()
+        if len(ranges) == 0:
+            return
+        rg = ranges[0]  #目前不支持同时复制黏贴多个区域
+        ss = self.clipboard.text()
+        ss = ss.rstrip('\n')
+        lst = []
+        t1 = ss.split('\n')
+        for t in t1:
+            t2 = t.split('\t')
+            lst.append(t2)
+        row = rg.topRow()
+        for t1 in lst:
+            col = rg.leftColumn()
+            for t2 in t1:
+                it = self.createItem(t2, editable=True)
+                self.twQuery.setItem(row, col, it)
+                col += 1
+                if col >= self.twQuery.columnCount():
+                    break
+            row += 1
+            if row >= self.twQuery.rowCount():
+                break
 
     def btnAdvFilterClicked(self):
         self.dlgFilter.show()

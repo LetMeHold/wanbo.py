@@ -2,9 +2,9 @@
 
 from gl import *
 from ui import *
-from PyQt5.QtWidgets import QMainWindow,QDialog,QTableWidgetItem,QAbstractItemView,QListWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem,QFileDialog
+from PyQt5.QtWidgets import QMainWindow,QDialog,QTableWidgetItem,QAbstractItemView,QListWidgetItem,QMenu,QAction,QMessageBox,QFileDialog,QMessageBox,QInputDialog,QTreeWidgetItem,QFileDialog,QShortcut
 from PyQt5.QtCore import QDate,Qt
-from PyQt5.QtGui import QIcon,QCursor,QBrush,QFont
+from PyQt5.QtGui import QIcon,QCursor,QBrush,QFont,QKeySequence
 
 class FilterDialog(QDialog, Ui_FilterDialog):
     def __init__(self, parent=None):
