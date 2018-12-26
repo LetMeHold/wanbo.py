@@ -3,7 +3,6 @@
 from wrap.business import *
 from wrap.filterdialog import *
 from wrap.jobdialog import JobDialog
-from PyQt5.QtWidgets import QApplication
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
@@ -35,7 +34,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twQuery.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twQuery.itemDoubleClicked.connect(self.tableQueryItemEdit)
         self.twQuery.itemSelectionChanged.connect(self.tableQuerySelectionChanged)
-
+        #数据管理(Query)页面表格的复制黏贴
+        self.actQryCopy = QAction(self)
+        self.actQryCopy.triggered.connect(self.tableQueryCopy)
+        self.actQryCopy.setShortcut(QKeySequence('Ctrl+c'))
+        self.twQuery.addAction(self.actQryCopy)
+        self.actQryPaste = QAction(self)
+        self.actQryPaste.triggered.connect(self.tableQueryPaste)
+        self.actQryPaste.setShortcut(QKeySequence('Ctrl+v'))
+        self.twQuery.addAction(self.actQryPaste)
+        #数据管理(Query)页面的树形菜单
         self.trQuery.setColumnCount(1)
         self.trQuery.setHeaderHidden(True)
         t = QTreeWidgetItem(self.trQuery, ['表格管理',])
@@ -52,7 +60,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twStats.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         #self.twStats.itemDoubleClicked.connect(self.tableStatsItemEdit)
         self.twStats.itemSelectionChanged.connect(self.tableStatsSelectionChanged)
-
+        #统计汇总(stats)页面表格的复制
+        self.actStatsCopy = QAction(self)
+        self.actStatsCopy.triggered.connect(self.tableStatsCopy)
+        self.actStatsCopy.setShortcut(QKeySequence('Ctrl+c'))
+        self.twStats.addAction(self.actStatsCopy)
+        #统计汇总(stats)页面的树形菜单
         self.trStats.setColumnCount(1)
         self.trStats.setHeaderHidden(True)
         t = QTreeWidgetItem(self.trStats, ['统计汇总',])
@@ -107,9 +120,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btnClearMsg.clicked.connect(self.btnClearMsgClicked)
         self.btnAdvFilter.clicked.connect(self.btnAdvFilterClicked)
 
-        QShortcut(QKeySequence('Ctrl+c'), self, self.tableQueryCopy)
-        QShortcut(QKeySequence('Ctrl+v'), self, self.tableQueryPaste)
-
         #更多需要初始化的内容
         self.dlgFilter = FilterDialog(self)
         self.dlgJob = JobDialog(self, self.bus)
@@ -145,23 +155,32 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return it
 
     def tableQueryCopy(self):
-        ranges = self.twQuery.selectedRanges()
+        self.tableCopy(self.twQuery)
+
+    def tableStatsCopy(self):
+        self.tableCopy(self.twStats)
+
+    def tableQueryPaste(self):
+        if self.isAdding == False:
+            return
+        self.tablePaste(self.twQuery)
+
+    def tableCopy(self, tw):
+        ranges = tw.selectedRanges()
         if len(ranges) == 0:
             return
         ss = ''
         rg = ranges[0]  #目前不支持同时复制黏贴多个区域
         for r in range(rg.topRow(), rg.bottomRow()+1):
             for c in range(rg.leftColumn(), rg.rightColumn()+1):
-                it = self.twQuery.item(r, c)
+                it = tw.item(r, c)
                 ss += '%s\t' % it.text()
             ss = ss.rstrip('\t')
             ss += '\n'
         self.clipboard.setText(ss)
 
-    def tableQueryPaste(self):
-        if self.isAdding == False:
-            return
-        ranges = self.twQuery.selectedRanges()
+    def tablePaste(self, tw):
+        ranges = tw.selectedRanges()
         if len(ranges) == 0:
             return
         rg = ranges[0]  #目前不支持同时复制黏贴多个区域
@@ -177,12 +196,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             col = rg.leftColumn()
             for t2 in t1:
                 it = self.createItem(t2, editable=True)
-                self.twQuery.setItem(row, col, it)
+                tw.setItem(row, col, it)
                 col += 1
-                if col >= self.twQuery.columnCount():
+                if col >= tw.columnCount():
                     break
             row += 1
-            if row >= self.twQuery.rowCount():
+            if row >= tw.rowCount():
                 break
 
     def btnAdvFilterClicked(self):
