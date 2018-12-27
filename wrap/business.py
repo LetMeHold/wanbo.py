@@ -119,6 +119,13 @@ class Business:
         elif typ == 'double':
             sql = sql.replace('%TBD','%.2f', 1)
             value = float(value.replace(',',''))
+        elif typ == 'percent':
+            if value.endswith('%'):
+                value = value.replace('%','')
+                value = round(float(value)/100, 2)
+            else:
+                value = float(value.replace(',',''))
+            sql = sql.replace('%TBD','%.2f', 1)
         else:
             sql = sql.replace('%TBD','"%s"', 1)
         return (sql,value)
@@ -128,6 +135,7 @@ class Business:
         try:
             (sql,value) = self.dealDataType(sql, typ, value)
         except:
+            GL.LOG.error('处理数据类型(field=%s,value=%s)时失败！' % (field,value))
             return False
         sql = sql % (table,field,value,field_id,value_id)
         return self.db.exec(sql, commit)

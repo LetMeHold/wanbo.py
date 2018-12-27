@@ -107,6 +107,12 @@ class FilterDialog(QDialog, Ui_FilterDialog):
                     value = int(value)
                 elif typ == 'double':
                     value = float(value.replace(',',''))
+                elif typ == 'percent':
+                    if value.endswith('%'):
+                        value = value.replace('%','')
+                        value = round(float(value)/100, 2)
+                    else:
+                        value = float(value.replace(',',''))
                 self.data[zhHead].append(value)
         except:
             err = '内容类型不匹配'

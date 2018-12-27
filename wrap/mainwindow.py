@@ -320,12 +320,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             paid = float(it_paid.text().replace(',',''))
             unpaid = round((contract-paid), 2)
             percent = round((unpaid/contract), 2)
-            it_unpaid = self.createItem(unpaid, 'double')
-            it_percent = self.createItem(percent, 'double')
             if self.isAdding:
+                it_unpaid = self.createItem(unpaid, 'double', editable=True)
+                it_percent = self.createItem(percent, 'double', editable=True)
                 self.twQuery.setItem(row, col_unpaid, it_unpaid)
                 self.twQuery.setItem(row, col_percent, it_percent)
             else:
+                it_unpaid = self.createItem(unpaid, 'double')
+                it_percent = self.createItem(percent, 'double')
                 id_it = self.twQuery.item(row, 0)
                 id_enHead = self.tableQueryHead[0][0]
                 id_value = int(id_it.text())
