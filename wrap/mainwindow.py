@@ -34,6 +34,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.twQuery.verticalHeader().setStyleSheet("QHeaderView::section{background:skyblue;}")
         self.twQuery.itemDoubleClicked.connect(self.tableQueryItemEdit)
         self.twQuery.itemSelectionChanged.connect(self.tableQuerySelectionChanged)
+        self.twQuery.itemChanged.connect(self.tableQueryItemChanged)
         #数据管理(Query)页面表格的复制黏贴
         self.actQryCopy = QAction(self)
         self.actQryCopy.triggered.connect(self.tableQueryCopy)
@@ -135,6 +136,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.itemDst = None
         self.txtDst = None
         self.isAdding = False
+        self.isFilling = False
 
     def createItem(self, value, typ=None, bg=None, font=None, editable=False):
         if value == None:
@@ -296,6 +298,53 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             else:
                 QMessageBox.critical(self, 'Error', '失败！')
 
+    #当表为应收账款时处理未收款、欠款比例的自动计算
+    def tableQueryItemChanged(self, it):
+        if self.tableQuery!='account' or self.isFilling:
+            return
+        row = it.row()
+        col = it.column()
+        head = self.tableQueryHead[1][col]
+        if head!='合同金额' and head!='已回款金额':
+            return
+        try:
+            col_contract = self.tableQueryHead[1].index('合同金额')
+            col_paid = self.tableQueryHead[1].index('已回款金额')
+            col_unpaid = self.tableQueryHead[1].index('未收款金额')
+            col_percent = self.tableQueryHead[1].index('欠款比例')
+            it_contract = self.twQuery.item(row, col_contract)
+            it_paid = self.twQuery.item(row, col_paid)
+            if it_contract==None or it_paid==None:
+                return
+            contract = float(it_contract.text().replace(',',''))
+            paid = float(it_paid.text().replace(',',''))
+            unpaid = round((contract-paid), 2)
+            percent = round((unpaid/contract), 2)
+            it_unpaid = self.createItem(unpaid, 'double')
+            it_percent = self.createItem(percent, 'double')
+            if self.isAdding:
+                self.twQuery.setItem(row, col_unpaid, it_unpaid)
+                self.twQuery.setItem(row, col_percent, it_percent)
+            else:
+                id_it = self.twQuery.item(row, 0)
+                id_enHead = self.tableQueryHead[0][0]
+                id_value = int(id_it.text())
+                enHead_unpaid = self.tableQueryHead[0][col_unpaid]
+                typ_unpaid = self.tableQueryHead[2][col_unpaid]
+                r1 = self.bus.updateTableById(self.tableQuery, enHead_unpaid, typ_unpaid, str(unpaid), id_enHead, id_value, False)
+                enHead_percent = self.tableQueryHead[0][col_percent]
+                typ_percent = self.tableQueryHead[2][col_percent]
+                r2 = self.bus.updateTableById(self.tableQuery, enHead_percent, typ_percent, str(percent), id_enHead, id_value, False)
+                if r1!=False and r2!=False:
+                    self.bus.commit()
+                    self.twQuery.setItem(row, col_unpaid, it_unpaid)
+                    self.twQuery.setItem(row, col_percent, it_percent)
+                else:
+                    self.bus.rollback()
+                    GL.LOG.error('自动计算(id=%d)未收款金额、欠款比例失败！' % id_value)
+        except:
+            GL.LOG.error('自动计算(id=%d)未收款金额、欠款比例时异常！' % id_value)
+
     def tableQuerySelectionChanged(self):
         items = self.twQuery.selectedItems()
         lst = []    #保存行号
@@ -382,6 +431,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if table not in self.bus.tables():
             return
         self.isAdding = False
+        self.isFilling = True
         condition = None
         if self.cbFilter.isChecked():
             condition = self.dlgFilter.sql()
@@ -391,6 +441,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableQueryHead = self.bus.selectTableHead(self.tableQuery)
         self.fillTable(self.twQuery, self.tableQuery, self.tableQueryData, self.tableQueryHead)
         self.dlgFilter.flushCombobox(self.tableQueryHead)
+        self.isFilling = False
 
     def btnRefreshClicked(self):
         self.fillTableQuery(self.tableQueryZh)

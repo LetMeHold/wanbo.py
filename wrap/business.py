@@ -109,24 +109,28 @@ class Business:
             sql = 'select * from %s where %s' % (table,condition)
         return self.db.query(sql)
 
-    def updateTableById(self, table, field, tp, value, field_id, value_id):
+    def dealDataType(self, sql, typ, value):
+        if value=='NULL' or value.strip()=='':
+            sql = sql.replace('%TBD','%s', 1)
+            value = 'NULL'
+        elif typ == 'int':
+            sql = sql.replace('%TBD','%d', 1)
+            value = int(value)
+        elif typ == 'double':
+            sql = sql.replace('%TBD','%.2f', 1)
+            value = float(value.replace(',',''))
+        else:
+            sql = sql.replace('%TBD','"%s"', 1)
+        return (sql,value)
+
+    def updateTableById(self, table, field, typ, value, field_id, value_id, commit=True):
         sql = 'update %s set %s = %TBD where %s = %d' 
         try:
-            if value.strip() == '':
-                sql = sql.replace('%TBD','%s', 1)
-                value = 'NULL'
-            elif tp == 'int':
-                sql = sql.replace('%TBD','%d', 1)
-                value = int(value)
-            elif tp == 'double':
-                sql = sql.replace('%TBD','%.2f', 1)
-                value = float(value.replace(',',''))
-            else:
-                sql = sql.replace('%TBD','"%s"', 1)
+            (sql,value) = self.dealDataType(sql, typ, value)
         except:
             return False
         sql = sql % (table,field,value,field_id,value_id)
-        return self.db.exec(sql)
+        return self.db.exec(sql, commit)
 
     def insertTable(self, tableZh, itemData, commit=True):
         table = self.tables()[tableZh]
@@ -137,18 +141,10 @@ class Business:
         try:
             #编号由数据库自动生成，所以从1开始
             for c in range(1, len(itemData)):
-                txt = itemData[c]
-                if txt == 'NULL':
-                    sql = sql.replace('%TBD','%s', 1)
-                elif head[2][c] == 'int':
-                    sql = sql.replace('%TBD','%d', 1)
-                    txt = int(txt)
-                elif head[2][c] == 'double':
-                    sql = sql.replace('%TBD','%.2f', 1)
-                    txt = float(txt.replace(',',''))
-                else:
-                    sql = sql.replace('%TBD','"%s"', 1)
-                datas.append(txt)
+                value = itemData[c]
+                typ = head[2][c]
+                (sql,value) = self.dealDataType(sql, typ, value)
+                datas.append(value)
         except:
             return False
         sql = sql % tuple(datas)
