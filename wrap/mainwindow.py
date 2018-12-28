@@ -12,9 +12,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowIcon(QIcon('res/logo.ico'))
         GL.LOG = getLogger('WanboLoger', 'logs', 'console.log')
         GL.LOG.info('主程序启动')
+        sys.excepthook = self.uncaughtException  #处理未捕获的异常
         self.clipboard = QApplication.clipboard()
         self.bus = Business()
         self.init()
+
+    def uncaughtException(self, exc_type, exc_value, exc_traceback):
+        if issubclass(exc_type, KeyboardInterrupt):
+            #用户自己中断则不需处理
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+        GL.LOG.error('Uncaught exception:', exc_info=(exc_type,exc_value,exc_traceback))
+        QMessageBox.critical(self, 'Error', '出现未捕获的异常，程序退出！')
+        self.close()
 
     def closeEvent(self, event):
         self.dlgJob.bus = None  #直接赋为None来避免两次触发bus的析构
