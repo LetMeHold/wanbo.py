@@ -79,6 +79,7 @@ class Business:
         tmp = self.db.query(sql)
         for t in tmp:
             self._statsCost.append(t['月份'])
+        self._statsCost.append('合计')
         return self._statsCost
 
     def selectTableHead(self, table):
@@ -280,6 +281,11 @@ class Business:
         tmp = self.db.query(sql)
         mp['总费用汇总'] = {}
         mp['总费用汇总']['费用'] = tmp
+        ct = 0.0
+        for t in tmp:
+            if t['费用'] != None:
+                ct += t['费用']
+        mp['总费用汇总']['费用'].append({'月份':'合计','费用':round(ct,2)})
         count = 1   #统计一级类目和二级类目的总数
         #一级类目
         sql = 'select class1 from balance where year(date)=year(now()) and pay is not null group by class1'
@@ -292,8 +298,12 @@ class Business:
             sql = 'select date_format(date,"%%Y-%%m")as"月份",sum(pay)as"费用" from balance where year(date)=year(now()) and class1="%s" group by date_format(date,"%%Y-%%m")' % class1
             tmp2 = self.db.query(sql)
             mp[class1]['费用'] = []
+            ct = 0.0
             for t2 in tmp2:
                 mp[class1]['费用'].append(t2)
+                if t2['费用'] != None:
+                    ct += t2['费用']
+            mp[class1]['费用'].append({'月份':'合计','费用':round(ct,2)})
             mp[class1]['二级类目'] = {}
             #一级类目下的二级类目
             sql = 'select class2 from balance where year(date)=year(now()) and pay is not null and class1="%s" group by class2' % class1
@@ -308,8 +318,12 @@ class Business:
                             group by date_format(date,"%%Y-%%m")' % (class1,class2)
                     tmp4 = self.db.query(sql)
                     if tmp4 != False:
+                        ct = 0.0
                         for t4 in tmp4:
                             mp[class1]['二级类目'][class2].append(t4)
+                            if t4['费用'] != None:
+                                ct += t4['费用']
+                        mp[class1]['二级类目'][class2].append({'月份':'合计','费用':round(ct,2)})
         return (mp,count)
 
     def getAccountStats(self):
