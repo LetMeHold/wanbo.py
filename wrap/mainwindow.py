@@ -310,52 +310,83 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     #当表为应收账款时处理未收款、欠款比例的自动计算
     def tableQueryItemChanged(self, it):
-        if self.tableQuery!='account' or self.isFilling:
+        if self.isFilling:
             return
         row = it.row()
         col = it.column()
         head = self.tableQueryHead[1][col]
-        if head!='合同金额' and head!='已回款金额':
-            return
-        try:
-            col_contract = self.tableQueryHead[1].index('合同金额')
-            col_paid = self.tableQueryHead[1].index('已回款金额')
-            col_unpaid = self.tableQueryHead[1].index('未收款金额')
-            col_percent = self.tableQueryHead[1].index('欠款比例')
-            it_contract = self.twQuery.item(row, col_contract)
-            it_paid = self.twQuery.item(row, col_paid)
-            if it_contract==None or it_paid==None:
-                return
-            contract = float(it_contract.text().replace(',',''))
-            paid = float(it_paid.text().replace(',',''))
-            unpaid = round((contract-paid), 2)
-            percent = round((unpaid/contract), 2)
-            if self.isAdding:
-                it_unpaid = self.createItem(unpaid, 'double', editable=True)
-                it_percent = self.createItem(percent, 'double', editable=True)
-                self.twQuery.setItem(row, col_unpaid, it_unpaid)
-                self.twQuery.setItem(row, col_percent, it_percent)
-            else:
-                it_unpaid = self.createItem(unpaid, 'double')
-                it_percent = self.createItem(percent, 'double')
-                id_it = self.twQuery.item(row, 0)
-                id_enHead = self.tableQueryHead[0][0]
-                id_value = int(id_it.text())
-                enHead_unpaid = self.tableQueryHead[0][col_unpaid]
-                typ_unpaid = self.tableQueryHead[2][col_unpaid]
-                r1 = self.bus.updateTableById(self.tableQuery, enHead_unpaid, typ_unpaid, str(unpaid), id_enHead, id_value, False)
-                enHead_percent = self.tableQueryHead[0][col_percent]
-                typ_percent = self.tableQueryHead[2][col_percent]
-                r2 = self.bus.updateTableById(self.tableQuery, enHead_percent, typ_percent, str(percent), id_enHead, id_value, False)
-                if r1!=False and r2!=False:
-                    self.bus.commit()
+
+        if self.tableQuery=='account' and (head=='合同金额' or head=='已回款金额'):
+            try:
+                col_contract = self.tableQueryHead[1].index('合同金额')
+                col_paid = self.tableQueryHead[1].index('已回款金额')
+                col_unpaid = self.tableQueryHead[1].index('未收款金额')
+                col_percent = self.tableQueryHead[1].index('欠款比例')
+                it_contract = self.twQuery.item(row, col_contract)
+                it_paid = self.twQuery.item(row, col_paid)
+                if it_contract==None or it_paid==None:
+                    return
+                contract = float(it_contract.text().replace(',',''))
+                paid = float(it_paid.text().replace(',',''))
+                unpaid = round((contract-paid), 2)
+                percent = round((unpaid/contract), 2)
+                if self.isAdding:
+                    it_unpaid = self.createItem(unpaid, 'double', editable=True)
+                    it_percent = self.createItem(percent, 'double', editable=True)
                     self.twQuery.setItem(row, col_unpaid, it_unpaid)
                     self.twQuery.setItem(row, col_percent, it_percent)
                 else:
-                    self.bus.rollback()
-                    GL.LOG.error('自动计算(id=%d)未收款金额、欠款比例失败！' % id_value)
-        except:
-            GL.LOG.error('自动计算(id=%d)未收款金额、欠款比例时异常！' % id_value)
+                    it_unpaid = self.createItem(unpaid, 'double')
+                    it_percent = self.createItem(percent, 'double')
+                    id_it = self.twQuery.item(row, 0)
+                    id_enHead = self.tableQueryHead[0][0]
+                    id_value = int(id_it.text())
+                    enHead_unpaid = self.tableQueryHead[0][col_unpaid]
+                    typ_unpaid = self.tableQueryHead[2][col_unpaid]
+                    r1 = self.bus.updateTableById(self.tableQuery, enHead_unpaid, typ_unpaid, str(unpaid), id_enHead, id_value, False)
+                    enHead_percent = self.tableQueryHead[0][col_percent]
+                    typ_percent = self.tableQueryHead[2][col_percent]
+                    r2 = self.bus.updateTableById(self.tableQuery, enHead_percent, typ_percent, str(percent), id_enHead, id_value, False)
+                    if r1!=False and r2!=False:
+                        self.bus.commit()
+                        self.twQuery.setItem(row, col_unpaid, it_unpaid)
+                        self.twQuery.setItem(row, col_percent, it_percent)
+                    else:
+                        self.bus.rollback()
+                        GL.LOG.error('自动计算(id=%d)未收款金额、欠款比例失败！' % id_value)
+            except:
+                GL.LOG.error('自动计算(id=%d)未收款金额、欠款比例时异常！' % id_value)
+        elif self.tableQuery=='contract' and (head=='数量' or head=='单价'):
+            try:
+                col_quantity = self.tableQueryHead[1].index('数量')
+                col_price = self.tableQueryHead[1].index('单价')
+                col_count = self.tableQueryHead[1].index('总价')
+                it_quantity = self.twQuery.item(row, col_quantity)
+                it_price = self.twQuery.item(row, col_price)
+                if it_quantity==None or it_price==None:
+                    return
+                quantity = float(it_quantity.text().replace(',',''))
+                price = float(it_price.text().replace(',',''))
+                count = round((quantity*price), 2)
+                if self.isAdding:
+                    it_count = self.createItem(count, 'double', editable=True)
+                    self.twQuery.setItem(row, col_count, it_count)
+                else:
+                    it_count = self.createItem(count, 'double')
+                    id_it = self.twQuery.item(row, 0)
+                    id_enHead = self.tableQueryHead[0][0]
+                    id_value = int(id_it.text())
+                    enHead_count = self.tableQueryHead[0][col_count]
+                    typ_count = self.tableQueryHead[2][col_count]
+                    r1 = self.bus.updateTableById(self.tableQuery, enHead_count, typ_count, str(count), id_enHead, id_value, False)
+                    if r1 != False:
+                        self.bus.commit()
+                        self.twQuery.setItem(row, col_count, it_count)
+                    else:
+                        self.bus.rollback()
+                        GL.LOG.error('自动计算(id=%d)总价失败！' % id_value)
+            except:
+                GL.LOG.error('自动计算(id=%d)总价时异常！' % id_value)
 
     def tableQuerySelectionChanged(self):
         items = self.twQuery.selectedItems()
