@@ -106,13 +106,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.actQryTest = QAction(self)
         self.actQryTest.setText('测试')
-        self.menuTableQuery.addAction(self.actQryTest)
+        #self.menuTableQuery.addAction(self.actQryTest)
         self.actQryTest.triggered.connect(self.actQryTestClicked)
 
         self.actQryAdvFilter = QAction(self)
         self.actQryAdvFilter.setText('添加到高级筛选')
         self.menuTableQuery.addAction(self.actQryAdvFilter)
         self.actQryAdvFilter.triggered.connect(self.actQryAdvFilterClicked)
+
+        self.actQryDel = QAction(self)
+        self.actQryDel.setText('删除行')
+        self.menuTableQuery.addAction(self.actQryDel)
+        self.actQryDel.triggered.connect(self.actQryDelClicked)
 
         #统计汇总页面的右键菜单
         self.menuTableStats = QMenu(self)
@@ -225,6 +230,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             itHead = self.twQuery.horizontalHeaderItem(it.column())
             zhHead = itHead.text()
             self.dlgFilter.add(zhHead, it.text())
+
+    def actQryDelClicked(self):
+        it = self.twQuery.currentItem()
+        r = it.row()
+        if self.isAdding:
+            self.twQuery.removeRow(r)
+            return
+        id_it = self.twQuery.item(r, 0)
+        id_enHead = self.tableQueryHead[0][0]
+        id_value = int(id_it.text())
+        if self.bus.deleteTableById(self.tableQuery, id_enHead, id_value):
+            self.btnRefreshClicked()
+        else:
+            GL.LOG.error('删除表(%s)行(id=%d)失败！' % (self.tableQuery,id_value))
 
     def btnClearMsgClicked(self):
         self.txtLoadMsg.clear()

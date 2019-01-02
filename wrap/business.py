@@ -141,6 +141,10 @@ class Business:
         sql = sql % (table,field,value,field_id,value_id)
         return self.db.exec(sql, commit)
 
+    def deleteTableById(self, table, field_id, value_id, commit=True):
+        sql = 'delete from %s where %s=%d' % (table,field_id,value_id)
+        return self.db.exec(sql, commit)
+
     def insertTable(self, tableZh, itemData, commit=True):
         table = self.tables()[tableZh]
         head = self.selectTableHead(table)
