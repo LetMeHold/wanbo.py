@@ -281,7 +281,7 @@ class Business:
     def getCostStats(self):
         mp = {}
         #总费用
-        sql = 'select sum(pay)as"费用",date_format(date,"%Y-%m")as"月份" from balance where year(date)=year(now()) and pay is not null group by date_format(date,"%Y-%m")'
+        sql = 'select sum(pay)as"费用",date_format(date,"%%Y-%%m")as"月份" from balance where year(date)=%s and pay is not null group by date_format(date,"%%Y-%%m")' % GL.year
         tmp = self.db.query(sql)
         mp['总费用汇总'] = {}
         mp['总费用汇总']['费用'] = tmp
@@ -292,14 +292,14 @@ class Business:
         mp['总费用汇总']['费用'].append({'月份':'合计','费用':round(ct,2)})
         count = 1   #统计一级类目和二级类目的总数
         #一级类目
-        sql = 'select class1 from balance where year(date)=year(now()) and pay is not null group by class1'
+        sql = 'select class1 from balance where year(date)=%s and pay is not null group by class1' % GL.year
         tmp1 = self.db.query(sql)
         for t1 in tmp1:
             count += 1
             class1 = t1['class1']
             mp[class1] = {}
             #一级类目的费用
-            sql = 'select date_format(date,"%%Y-%%m")as"月份",sum(pay)as"费用" from balance where year(date)=year(now()) and class1="%s" group by date_format(date,"%%Y-%%m")' % class1
+            sql = 'select date_format(date,"%%Y-%%m")as"月份",sum(pay)as"费用" from balance where year(date)=%s and class1="%s" group by date_format(date,"%%Y-%%m")' % (GL.year,class1)
             tmp2 = self.db.query(sql)
             mp[class1]['费用'] = []
             ct = 0.0
@@ -310,7 +310,7 @@ class Business:
             mp[class1]['费用'].append({'月份':'合计','费用':round(ct,2)})
             mp[class1]['二级类目'] = {}
             #一级类目下的二级类目
-            sql = 'select class2 from balance where year(date)=year(now()) and pay is not null and class1="%s" group by class2' % class1
+            sql = 'select class2 from balance where year(date)=%s and pay is not null and class1="%s" group by class2' % (GL.year,class1)
             tmp3 = self.db.query(sql)
             if tmp3 != False:
                 for t3 in tmp3:
@@ -318,8 +318,8 @@ class Business:
                     class2 = t3['class2']
                     mp[class1]['二级类目'][class2] = []
                     #二级类目的费用
-                    sql = 'select date_format(date,"%%Y-%%m")as"月份",sum(pay)as"费用" from balance where year(date)=year(now()) and class1="%s" and class2="%s"\
-                            group by date_format(date,"%%Y-%%m")' % (class1,class2)
+                    sql = 'select date_format(date,"%%Y-%%m")as"月份",sum(pay)as"费用" from balance where year(date)=%s and class1="%s" and class2="%s"\
+                            group by date_format(date,"%%Y-%%m")' % (GL.year,class1,class2)
                     tmp4 = self.db.query(sql)
                     if tmp4 != False:
                         ct = 0.0
