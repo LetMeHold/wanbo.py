@@ -15,6 +15,7 @@ class Global:
         self.ERR = None
         self.minStuffid = 1
         self.maxStuffid = None
+        self.year = None
 
     def setErr(self, err):
         self.ERR = err

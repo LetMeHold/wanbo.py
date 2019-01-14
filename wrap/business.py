@@ -75,7 +75,7 @@ class Business:
 
     def statsCost(self):
         self._statsCost = ['一级类目','二级类目']
-        sql = 'select date_format(date,"%Y-%m")as"月份" from balance where year(date)=year(now()) group by date_format(date,"%Y-%m")'
+        sql = 'select date_format(date,"%%Y-%%m")as"月份" from balance where year(date)=%s group by date_format(date,"%%Y-%%m")' % GL.year
         tmp = self.db.query(sql)
         for t in tmp:
             self._statsCost.append(t['月份'])
@@ -171,7 +171,7 @@ class Business:
         return self.db.query(sql)
 
     def getInvoiceStats(self):
-        sql = 'select date_format(date,"%Y-%m")as"月份",sum(price_notax)as"未税金额",sum(tax)as"税额" from invoice group by date_format(date,"%Y-%m")'
+        sql = 'select date_format(date,"%%Y-%%m")as"月份",sum(price_notax)as"未税金额",sum(tax)as"税额" from invoice where year(date)=%s group by date_format(date,"%%Y-%%m")' % GL.year
         ret = self.db.query(sql)
         tmp = {}
         tmp['月份'] = '合计'
@@ -334,9 +334,9 @@ class Business:
         mp = {}
         sql = 'select sum(amount)as"合同总额",sum(paid)as"回款总额",sum(unpaid)as"未收款总额",sum(debt)as"坏账总额",sum(commission)as"提成总额" from account'
         mp.update(self.db.query(sql)[0])
-        sql = 'select sum(amount)as"今年合同额",sum(paid)as"今年回款额",sum(unpaid)as"今年未收款额",sum(debt)as"今年坏账额",sum(commission)as"今年提成额" from account where year(date)=year(now())'
+        sql = 'select sum(amount)as"今年合同额",sum(paid)as"今年回款额",sum(unpaid)as"今年未收款额",sum(debt)as"今年坏账额",sum(commission)as"今年提成额" from account where year(date)=%s' % GL.year
         mp.update(self.db.query(sql)[0])
-        sql = 'select sum(amount)as"历年合同额",sum(paid)as"历年回款额",sum(unpaid)as"历年未收款额",sum(debt)as"历年坏账额",sum(commission)as"历年提成额" from account where year(date)<year(now())'
+        sql = 'select sum(amount)as"历年合同额",sum(paid)as"历年回款额",sum(unpaid)as"历年未收款额",sum(debt)as"历年坏账额",sum(commission)as"历年提成额" from account where year(date)<%s' % GL.year
         mp.update(self.db.query(sql)[0])
         sql = 'select sum(unpaid)as"正常欠款" from account where status="正常欠款"'
         mp.update(self.db.query(sql)[0])
@@ -408,6 +408,7 @@ class Business:
                     ok = False
                     break
         except:
+            GL.LOG.error(traceback.format_exc())
             ok = False
         if ok == False:
             self.db.rollback()
@@ -458,6 +459,7 @@ class Business:
                     ok = False
                     break
         except:
+            GL.LOG.error(traceback.format_exc())
             ok = False
         if ok == False:
             self.db.rollback()
@@ -504,6 +506,7 @@ class Business:
                     ok = False
                     break
         except:
+            GL.LOG.error(traceback.format_exc())
             ok = False
         if ok == False:
             self.db.rollback()
@@ -550,6 +553,7 @@ class Business:
                     ok = False
                     break
         except:
+            GL.LOG.error(traceback.format_exc())
             ok = False
         if ok == False:
             self.db.rollback()

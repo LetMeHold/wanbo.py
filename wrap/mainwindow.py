@@ -36,10 +36,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def actQryTestClicked(self):
         pass
 
+    def thisYearTriggered(self, check):
+        if check:
+            self.act2018.setChecked(False)
+            GL.year = datetime.datetime.now().strftime('%Y')
+        else:
+            self.thisYear.setChecked(True)
+
+    def act2018Triggered(self, check):
+        if check:
+            self.thisYear.setChecked(False)
+            GL.year = '2018'
+        else:
+            self.thisYear.setChecked(True)
+
     def init(self):
         #年份
         self.thisYear.setCheckable(True)
-        self.actYears = []
+        self.thisYear.triggered.connect(self.thisYearTriggered)
+        self.act2018 = QAction('2018', self)
+        self.act2018.setCheckable(True)
+        self.menu.addAction(self.act2018)
+        self.act2018.triggered.connect(self.act2018Triggered)
+        GL.year = datetime.datetime.now().strftime('%Y')
         #数据管理(Query)页面的表格
         self.twQuery.setContextMenuPolicy(Qt.CustomContextMenu)
         self.twQuery.customContextMenuRequested.connect(self.tableQueryMenu)
@@ -249,6 +268,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.edtFile.setText(fn)
 
     def btnImportClicked(self):
+        if self.edtFile.text() == '':
+            return
         wb = self.bus.loadExcel(self.edtFile.text())
         for ws in wb:
             if ws.title=='现金账户1明细账' and self.cb1.isChecked():
