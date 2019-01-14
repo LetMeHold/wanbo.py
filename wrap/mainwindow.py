@@ -40,6 +40,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if check:
             self.act2018.setChecked(False)
             GL.year = datetime.datetime.now().strftime('%Y')
+            self.setWindowTitle('万泊 - %s' % GL.year)
         else:
             self.thisYear.setChecked(True)
 
@@ -47,6 +48,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if check:
             self.thisYear.setChecked(False)
             GL.year = '2018'
+            self.setWindowTitle('万泊 - %s' % GL.year)
         else:
             self.thisYear.setChecked(True)
 
@@ -59,6 +61,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.menu.addAction(self.act2018)
         self.act2018.triggered.connect(self.act2018Triggered)
         GL.year = datetime.datetime.now().strftime('%Y')
+        self.setWindowTitle('万泊 - %s' % GL.year)
         #数据管理(Query)页面的表格
         self.twQuery.setContextMenuPolicy(Qt.CustomContextMenu)
         self.twQuery.customContextMenuRequested.connect(self.tableQueryMenu)
