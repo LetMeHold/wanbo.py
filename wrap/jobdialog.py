@@ -24,11 +24,9 @@ class JobDialog(QDialog, Ui_JobDialog):
         #操作(Job)页面的右键菜单
         self.menuTableJob = QMenu(self)
 
-        self.actJobRelate = QAction(self)
-        self.actJobRelate.setText('确认关联')
+        self.actJobRelate = QAction('确认关联', self)
         self.menuTableJob.addAction(self.actJobRelate)
         self.actJobRelate.triggered.connect(self.actJobRelateClicked)
-
 
         self.btnJobRefresh.clicked.connect(self.btnJobRefreshClicked)
         self.edtFilterJob.textChanged.connect(self.edtFilterJobChanged)

@@ -37,6 +37,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         pass
 
     def init(self):
+        #年份
+        self.thisYear.setCheckable(True)
+        self.actYears = []
         #数据管理(Query)页面的表格
         self.twQuery.setContextMenuPolicy(Qt.CustomContextMenu)
         self.twQuery.customContextMenuRequested.connect(self.tableQueryMenu)
@@ -89,41 +92,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #数据管理(Query)页面的右键菜单
         self.menuTableQuery = QMenu(self)
 
-        self.actQryFilter = QAction(self)
-        self.actQryFilter.setText('筛选')
+        self.actQryFilter = QAction('筛选', self)
         self.menuTableQuery.addAction(self.actQryFilter)
         self.actQryFilter.triggered.connect(self.actQryFilterClicked)
 
-        self.actQryRelateAccount = QAction(self)
-        self.actQryRelateAccount.setText('关联账款')
+        self.actQryRelateAccount = QAction('关联账款', self)
         self.menuTableQuery.addAction(self.actQryRelateAccount)
         self.actQryRelateAccount.triggered.connect(self.actQryRelateAccountClicked)
 
-        self.actQryRelateDetail = QAction(self)
-        self.actQryRelateDetail.setText('关联明细')
+        self.actQryRelateDetail = QAction('关联明细', self)
         self.menuTableQuery.addAction(self.actQryRelateDetail)
         self.actQryRelateDetail.triggered.connect(self.actQryRelateDetailClicked)
 
-        self.actQryTest = QAction(self)
-        self.actQryTest.setText('测试')
+        self.actQryTest = QAction('测试', self)
         #self.menuTableQuery.addAction(self.actQryTest)
         self.actQryTest.triggered.connect(self.actQryTestClicked)
 
-        self.actQryAdvFilter = QAction(self)
-        self.actQryAdvFilter.setText('添加到高级筛选')
+        self.actQryAdvFilter = QAction('添加到高级筛选', self)
         self.menuTableQuery.addAction(self.actQryAdvFilter)
         self.actQryAdvFilter.triggered.connect(self.actQryAdvFilterClicked)
 
-        self.actQryDel = QAction(self)
-        self.actQryDel.setText('删除行')
+        self.actQryDel = QAction('删除行', self)
         self.menuTableQuery.addAction(self.actQryDel)
         self.actQryDel.triggered.connect(self.actQryDelClicked)
 
         #统计汇总页面的右键菜单
         self.menuTableStats = QMenu(self)
 
-        self.actStatsExport = QAction(self)
-        self.actStatsExport.setText('导出')
+        self.actStatsExport = QAction('导出', self)
         self.menuTableStats.addAction(self.actStatsExport)
         self.actStatsExport.triggered.connect(self.actStatsExportClicked)
 
@@ -867,5 +863,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             ws.cell(row=row+1,column=col).value = cell2
 
         fn,ft = QFileDialog.getSaveFileName(self, '保存文件', 'D:\MYC\data\wanbo', 'Excel Files (*.xlsx)')
-        wb.save(fn)
+        if fn!=None and fn!='':
+            wb.save(fn)
 

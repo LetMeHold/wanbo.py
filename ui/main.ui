@@ -451,14 +451,39 @@
      <x>0</x>
      <y>0</y>
      <width>956</width>
-     <height>30</height>
+     <height>26</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>年份</string>
+    </property>
+    <addaction name="thisYear"/>
+   </widget>
+   <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actLoad">
    <property name="text">
     <string>导入</string>
+   </property>
+  </action>
+  <action name="action2016">
+   <property name="text">
+    <string>2016</string>
+   </property>
+  </action>
+  <action name="thisYear">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>今年</string>
+   </property>
+  </action>
+  <action name="action2019">
+   <property name="text">
+    <string>2019</string>
    </property>
   </action>
  </widget>
