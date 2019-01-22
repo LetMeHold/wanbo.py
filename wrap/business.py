@@ -13,26 +13,32 @@ class Business:
         self._stats = ['应收账款统计','开票统计','收支统计','费用统计']
         self._statsAccount = {
             '今年合同额':{'row':0,'column':0,'form':'double'},
-            '历年合同额':{'row':0,'column':1,'form':'double'},
-            '合同总额':{'row':0,'column':2,'form':'double'},
+            '2018合同额':{'row':0,'column':1,'form':'double'},
+            '历年合同额':{'row':0,'column':2,'form':'double'},
+            '合同总额':{'row':0,'column':3,'form':'double'},
             '今年回款额':{'row':2,'column':0,'form':'double'},
-            '历年回款额':{'row':2,'column':1,'form':'double'},
-            '回款总额':{'row':2,'column':2,'form':'double'},
+            '2018回款额':{'row':2,'column':1,'form':'double'},
+            '历年回款额':{'row':2,'column':2,'form':'double'},
+            '回款总额':{'row':2,'column':3,'form':'double'},
             '今年未收款额':{'row':4,'column':0,'form':'double'},
-            '历年未收款额':{'row':4,'column':1,'form':'double'},
-            '未收款总额':{'row':4,'column':2,'form':'double'},
-            '正常欠款':{'row':4,'column':3,'form':'double'},
-            '异常欠款':{'row':4,'column':4,'form':'double'},
-            '到期欠款':{'row':4,'column':5,'form':'double'},
+            '2018未收款额':{'row':4,'column':1,'form':'double'},
+            '历年未收款额':{'row':4,'column':2,'form':'double'},
+            '未收款总额':{'row':4,'column':3,'form':'double'},
+            '正常欠款':{'row':4,'column':4,'form':'double'},
+            '异常欠款':{'row':4,'column':5,'form':'double'},
+            '到期欠款':{'row':4,'column':6,'form':'double'},
             '今年坏账额':{'row':6,'column':0,'form':'double'},
-            '历年坏账额':{'row':6,'column':1,'form':'double'},
-            '坏账总额':{'row':6,'column':2,'form':'double'},
+            '2018坏账额':{'row':6,'column':1,'form':'double'},
+            '历年坏账额':{'row':6,'column':2,'form':'double'},
+            '坏账总额':{'row':6,'column':3,'form':'double'},
             '今年提成额':{'row':8,'column':0,'form':'double'},
-            '历年提成额':{'row':8,'column':1,'form':'double'},
-            '提成总额':{'row':8,'column':2,'form':'double'},
+            '2018提成额':{'row':8,'column':1,'form':'double'},
+            '历年提成额':{'row':8,'column':2,'form':'double'},
+            '提成总额':{'row':8,'column':3,'form':'double'},
             '今年合同欠款率':{'row':10,'column':0,'form':'percent'},
-            '历年合同欠款率':{'row':10,'column':1,'form':'percent'},
-            '总欠款率':{'row':10,'column':2,'form':'percent'}
+            '2018合同欠款率':{'row':10,'column':1,'form':'percent'},
+            '历年合同欠款率':{'row':10,'column':2,'form':'percent'},
+            '总欠款率':{'row':10,'column':3,'form':'percent'}
         }
         self._statsInvoice = (['月份','未税金额','税额','含税金额'],['str','double','double','double'])
         self._statsBalance = (['年份','来源','主营业务收入','其他业务收入','营业外收入','上年度余额转入','年度总收入','支出','结余','利润','年初余额','当前余额','余额增长','增长率'],
@@ -335,6 +341,8 @@ class Business:
         sql = 'select sum(amount)as"合同总额",sum(paid)as"回款总额",sum(unpaid)as"未收款总额",sum(debt)as"坏账总额",sum(commission)as"提成总额" from account'
         mp.update(self.db.query(sql)[0])
         sql = 'select sum(amount)as"今年合同额",sum(paid)as"今年回款额",sum(unpaid)as"今年未收款额",sum(debt)as"今年坏账额",sum(commission)as"今年提成额" from account where year(date)=%s' % GL.year
+        mp.update(self.db.query(sql)[0])
+        sql = 'select sum(amount)as"2018合同额",sum(paid)as"2018回款额",sum(unpaid)as"2018未收款额",sum(debt)as"2018坏账额",sum(commission)as"2018提成额" from account where year(date)=2018'
         mp.update(self.db.query(sql)[0])
         sql = 'select sum(amount)as"历年合同额",sum(paid)as"历年回款额",sum(unpaid)as"历年未收款额",sum(debt)as"历年坏账额",sum(commission)as"历年提成额" from account where year(date)<%s' % GL.year
         mp.update(self.db.query(sql)[0])

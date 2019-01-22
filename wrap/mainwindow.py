@@ -618,6 +618,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 ret['今年合同欠款率'] = ret['今年未收款额'] / ret['今年合同额']
             else:
                 ret['今年合同欠款率'] = 0.0
+            if ret['2018合同额'] != 0.0:
+                ret['2018合同欠款率'] = ret['2018未收款额'] / ret['2018合同额']
+            else:
+                ret['2018合同欠款率'] = 0.0
             if ret['历年合同额'] != 0.0:
                 ret['历年合同欠款率'] = ret['历年未收款额'] / ret['历年合同额']
             else:
